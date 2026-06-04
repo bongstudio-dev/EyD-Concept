@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>E&D Herbs — The land knew first · Propuesta 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,300;0,400;0,500;0,700;0,800;1,400;1,700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="icons-prop2.css" />
+<link rel="stylesheet" href="styles-prop2.css" />
+</head>
+<body>
+
+<!-- ───────────────────────── NAV ───────────────────────── -->
+<header class="nav-wrap" id="nav">
+  <a class="site-logo" href="#top" aria-label="E&D Herbs — inicio">
+    <span class="site-logo-mark" aria-hidden="true"></span>
+  </a>
+  <nav class="nav-shell" id="navShell" aria-label="Principal">
+    <div class="nav-bar">
+      <ul class="nav-links" role="menubar">
+        <li><button class="nav-link" data-menu="productos" type="button">Productos</button></li>
+        <li><button class="nav-link" data-menu="condicion" type="button">Por condición</button></li>
+        <li><button class="nav-link" data-menu="nosotros" type="button">Nosotros</button></li>
+        <li><button class="nav-link" data-menu="iniciativas" type="button">Iniciativas</button></li>
+        <li><a class="nav-link" href="#blog">Blog</a></li>
+        <li><a class="nav-link" href="#footer">Contacto</a></li>
+      </ul>
+
+      <div class="nav-tools">
+        <button class="nav-icon" id="searchBtn" aria-label="Buscar" type="button"><span class="ic ic-search" aria-hidden="true"></span></button>
+        <button class="nav-icon" aria-label="Carrito" type="button"><span class="ic ic-bag" aria-hidden="true"></span></button>
+        <button class="nav-icon" aria-label="Cuenta" type="button"><span class="ic ic-user" aria-hidden="true"></span></button>
+        <button class="nav-burger" id="burger" aria-label="Menú" type="button"><span></span><span></span></button>
+      </div>
+    </div>
+
+    <!-- the drawer grows from inside the same solid -->
+    <div class="nav-drawer" id="navDrawer">
+      <button class="mobile-menu-back" id="mobileMenuBack" type="button">Volver</button>
+      <div class="nav-drawer-inner">
+
+        <section class="mega" data-panel="productos">
+          <div class="mega-feature" style="--accent:var(--green)">
+            <span class="mega-feature-illus" style="--m:url(assets/illus/canela.svg)"></span>
+            <p class="mega-kicker">Catálogo</p>
+            <h3 class="mega-feature-title">Cada formato, su <em>ritual</em>.</h3>
+            <a class="mega-cta" href="#productos">Ver todos los productos <span class="arrow" aria-hidden="true"></span></a>
+          </div>
+          <div class="mega-cols">
+            <div class="mega-col">
+              <p class="mega-col-title">Formatos</p>
+              <a href="#productos">Tinturas</a>
+              <a href="#productos">Cápsulas</a>
+              <a href="#productos">Gliceritos</a>
+              <a href="#productos">Aceites</a>
+              <a href="#productos">Cremas</a>
+              <a href="#productos">Té</a>
+            </div>
+            <div class="mega-col">
+              <p class="mega-col-title">Colecciones</p>
+              <a href="#productos">Más vendidos</a>
+              <a href="#productos">Kits &amp; rituales</a>
+              <a href="#productos">Novedades</a>
+              <a href="#productos">Gift cards</a>
+              <a href="#productos">Suscripción</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="mega" data-panel="condicion">
+          <div class="mega-feature" style="--accent:var(--blue)">
+            <span class="mega-feature-illus" style="--m:url(assets/illus/hibiscus.svg)"></span>
+            <p class="mega-kicker">Encuentra tu solución</p>
+            <h3 class="mega-feature-title">Ordenadas por lo que tu <em>cuerpo pide</em>.</h3>
+            <a class="mega-cta" href="#solucion">Explorar por condición <span class="arrow" aria-hidden="true"></span></a>
+          </div>
+          <div class="mega-cols">
+            <div class="mega-col">
+              <p class="mega-col-title">Bienestar</p>
+              <a href="#solucion">Bienestar diario</a>
+              <a href="#solucion">Energía natural</a>
+              <a href="#solucion">Restauración del sistema</a>
+              <a href="#solucion">Defensas</a>
+            </div>
+            <div class="mega-col">
+              <p class="mega-col-title">Cuidado</p>
+              <a href="#solucion">Limpieza y renovación</a>
+              <a href="#solucion">Cuidado de la piel</a>
+              <a href="#solucion">Digestión</a>
+              <a href="#solucion">Calma y sistema nervioso</a>
+            </div>
+            <div class="mega-col">
+              <p class="mega-col-title">Específicos</p>
+              <a href="#solucion">Salud femenina</a>
+              <a href="#solucion">Salud masculina</a>
+              <a href="#solucion">Respiración</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="mega" data-panel="nosotros">
+          <div class="mega-feature" style="--accent:var(--plum)">
+            <span class="mega-feature-illus" style="--m:url(assets/illus/finca.svg)"></span>
+            <p class="mega-kicker">Moca, Puerto Rico</p>
+            <h3 class="mega-feature-title">La tierra siempre tuvo las <em>respuestas</em>.</h3>
+            <a class="mega-cta" href="#tierra">Conoce nuestra historia <span class="arrow" aria-hidden="true"></span></a>
+          </div>
+          <div class="mega-cols">
+            <div class="mega-col">
+              <p class="mega-col-title">La casa</p>
+              <a href="#tierra">Nuestra historia</a>
+              <a href="#tierra">La finca</a>
+              <a href="#tierra">Staff</a>
+              <a href="#tierra">Facilidades</a>
+            </div>
+            <div class="mega-col">
+              <p class="mega-col-title">Aprende</p>
+              <a href="#blog">E&amp;D Academy</a>
+              <a href="#blog">Blog</a>
+              <a href="#blog">Guías de uso</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="mega" data-panel="iniciativas">
+          <div class="mega-feature" style="--accent:var(--orange)">
+            <span class="mega-feature-illus" style="--m:url(assets/illus/suelo.svg)"></span>
+            <p class="mega-kicker">Devolverle a la tierra</p>
+            <h3 class="mega-feature-title">Lo que cultivamos hoy nace de <em>años</em>.</h3>
+            <a class="mega-cta" href="#tierra">Ver iniciativas <span class="arrow" aria-hidden="true"></span></a>
+          </div>
+          <div class="mega-cols">
+            <div class="mega-col">
+              <p class="mega-col-title">Impacto</p>
+              <a href="#tierra">Fundación Love Grain</a>
+              <a href="#tierra">Sostenibilidad</a>
+              <a href="#tierra">Comunidad de Moca</a>
+            </div>
+            <div class="mega-col">
+              <p class="mega-col-title">Calidad</p>
+              <a href="#tierra">Certificación GMP</a>
+              <a href="#tierra">Registro FDA</a>
+              <a href="#tierra">Trazabilidad</a>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </nav>
+  <div class="nav-scrim" id="navScrim"></div>
+</header>
+
+<main id="top">
+
+  <!-- ───────────────────────── HERO ───────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-photo" id="heroPhoto"></div>
+    <div class="hero-fade"></div>
+    <div class="hero-overlay">
+      <div class="hero-tagline reveal" data-rv data-hero-rv>
+        <span class="line">The land</span>
+        <span class="line"><em>knew first</em></span>
+      </div>
+      <a class="hero-aside reveal" data-rv data-hero-rv href="#productos">
+        <span class="hero-aside-l1">Conoce nuestros</span>
+        <span class="hero-aside-l2"><em>productos naturales</em> <span class="arrow" aria-hidden="true"></span></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── MISIÓN ───────────────────────── -->
+  <section class="mission" id="tierra">
+    <p class="mission-copy reveal" data-rv data-rv-words data-rv-scroll>
+      La tierra <strong>siempre tuvo las respuestas.</strong> Lo que las manos
+      supieron antes que las palabras. Siempre fue así en Moca, por generaciones,
+      una familia trabajó con <strong>amor y sacrificio</strong> para darte lo que
+      te pertenecía antes de que lo supieras. <em>The land knew first.</em>
+    </p>
+  </section>
+
+  <!-- ───────────────────────── CREDENCIALES ───────────────────────── -->
+  <section class="creds">
+    <div class="creds-grid">
+      <article class="cred-card reveal" data-rv data-after-scroll-text style="--card:var(--green);--ink:var(--green-light)">
+        <span class="cred-illus" style="--m:url(assets/illus/suelo.svg)"></span>
+        <p class="cred-text">Más de 20 años de experiencia trabajando la tierra.</p>
+      </article>
+      <article class="cred-card reveal" data-rv data-after-scroll-text style="--card:var(--orange);--ink:var(--peach)">
+        <span class="cred-illus" style="--m:url(assets/illus/canela.svg)"></span>
+        <p class="cred-text">Facilidades registradas ante FDA, certificación GMP.</p>
+      </article>
+      <article class="cred-card reveal" data-rv data-after-scroll-text style="--card:var(--plum);--ink:var(--lilac-pale)">
+        <span class="cred-illus" style="--m:url(assets/illus/finca.svg)"></span>
+        <p class="cred-text">Sembramos, seleccionamos y procesamos en nuestra propia finca.</p>
+      </article>
+      <article class="cred-card reveal" data-rv data-after-scroll-text style="--card:var(--blue);--ink:var(--blue-pale)">
+        <span class="cred-illus" style="--m:url(assets/illus/hibiscus.svg)"></span>
+        <p class="cred-text">De Moca, Puerto Rico para el mundo entero.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── PRODUCTOS ───────────────────────── -->
+  <section class="products" id="productos">
+    <h2 class="products-title reveal" data-rv>
+      Sabemos que cada persona es <em>distinta</em><br />
+      y tenemos opciones <em>para cada una.</em>
+    </h2>
+
+    <div class="products-grid">
+      <a class="product-card reveal" data-rv href="#productos" style="--tint:var(--green)">
+        <div class="product-head"><span class="product-name">Tinturas</span><span class="arrow" aria-hidden="true"></span></div>
+        <div class="product-media"><div class="product-img" style="background-image:url(assets-prop2/img/products/tintura.jpeg)"></div></div>
+      </a>
+      <a class="product-card reveal" data-rv href="#productos" style="--tint:var(--orange)">
+        <div class="product-head"><span class="product-name">Cápsulas</span><span class="arrow" aria-hidden="true"></span></div>
+        <div class="product-media"><div class="product-img" style="background-image:url(assets-prop2/img/products/capsulas.jpeg)"></div></div>
+      </a>
+      <a class="product-card reveal" data-rv href="#productos" style="--tint:var(--blue)">
+        <div class="product-head"><span class="product-name">Gliceritos</span><span class="arrow" aria-hidden="true"></span></div>
+        <div class="product-media"><div class="product-img" style="background-image:url(assets-prop2/img/products/gliceritos.jpeg)"></div></div>
+      </a>
+      <a class="product-card reveal" data-rv href="#productos" style="--tint:var(--plum)">
+        <div class="product-head"><span class="product-name">Aceites</span><span class="arrow" aria-hidden="true"></span></div>
+        <div class="product-media"><div class="product-img" style="background-image:url(assets-prop2/img/products/aceite.jpeg)"></div></div>
+      </a>
+      <a class="product-card reveal" data-rv href="#productos" style="--tint:var(--green-mid)">
+        <div class="product-head"><span class="product-name">Cremas</span><span class="arrow" aria-hidden="true"></span></div>
+        <div class="product-media"><div class="product-img" style="background-image:url(assets-prop2/img/products/crema.jpeg)"></div></div>
+      </a>
+      <a class="product-card reveal" data-rv href="#productos" style="--tint:var(--lilac)">
+        <div class="product-head"><span class="product-name">Té</span><span class="arrow" aria-hidden="true"></span></div>
+        <div class="product-media"><div class="product-img" style="background-image:url(assets-prop2/img/products/te.jpeg)"></div></div>
+      </a>
+    </div>
+
+    <div class="products-cta reveal" data-rv>
+      <a class="btn btn-green" href="#productos">VER TODOS <span class="arrow" aria-hidden="true"></span></a>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── ENCUENTRA TU SOLUCIÓN ───────────────────────── -->
+  <section class="solucion" id="solucion">
+    <div class="solucion-top">
+      <div class="solucion-intro reveal" data-rv>
+        <h2 class="solucion-title">Encuentra<br /><em>tu solución</em></h2>
+        <p class="solucion-sub">Cada hierba tiene su momento. Estas son las nuestras, ordenadas por lo que tu cuerpo pide.</p>
+      </div>
+      <div class="solucion-pills reveal" data-rv>
+        <a class="pill" href="#solucion">Bienestar diario <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Limpieza y renovación <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Energía natural <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Cuidado de la piel <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Restauración del sistema <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Digestión <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Defensas <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Calma y sistema nervioso <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Salud femenina <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Salud masculina <span class="arrow" aria-hidden="true"></span></a>
+        <a class="pill" href="#solucion">Respiración <span class="arrow" aria-hidden="true"></span></a>
+      </div>
+    </div>
+
+    <!-- TICKER de ilustraciones -->
+    <div class="ticker" id="ticker" aria-label="Sistema de ilustraciones E&D">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── EDITORIAL TIERRA ───────────────────────── -->
+  <section class="editorial" id="blog">
+    <div class="editorial-row">
+      <figure class="ed-img ed-img-lab reveal" data-rv>
+        <div class="ed-photo" style="background-image:url(assets-prop2/img/editorial-1.png)"></div>
+      </figure>
+      <div class="ed-text ed-text-a reveal" data-rv>
+        <span class="ed-illus" style="--m:url(assets/illus/canela.svg)"></span>
+        <p>Lo que cultivamos hoy nace de años de observación, aprendizaje y respeto por la naturaleza.</p>
+      </div>
+    </div>
+    <div class="editorial-row editorial-row-rev">
+      <figure class="ed-img ed-img-field reveal" data-rv>
+        <div class="ed-photo" style="background-image:url(assets-prop2/img/field-1.png)"></div>
+      </figure>
+      <div class="ed-text ed-text-b reveal" data-rv>
+        <span class="ed-illus" style="--m:url(assets/illus/finca.svg)"></span>
+        <p>Nuestro trabajo consiste en acompañar ese proceso con el cuidado que merece.</p>
+        <span class="ed-place"><em>Moca, Puerto Rico</em></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── BAND ───────────────────────── -->
+  <section class="band">
+    <span class="band-illus band-illus-l" aria-hidden="true"></span>
+    <p class="band-text reveal" data-rv>The land <em>knew first.</em></p>
+    <span class="band-illus band-illus-r" aria-hidden="true"></span>
+  </section>
+
+</main>
+
+<!-- ───────────────────────── FOOTER ───────────────────────── -->
+<footer class="footer" id="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-hidden="true"></span>
+    </div>
+    <nav class="footer-cols" aria-label="Pie de página">
+      <div class="footer-col">
+        <p class="footer-col-title">Tienda</p>
+        <a href="#productos">Todos los Productos</a>
+        <a href="#productos">Más Vendidos</a>
+        <a href="#productos">Kits</a>
+        <a href="#productos">Gift Cards</a>
+        <a href="#productos">Suscríbete</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-col-title">Explora</p>
+        <a href="#tierra">Nuestra Historia</a>
+        <a href="#tierra">Fundación Love Grain</a>
+        <a href="#blog">E&amp;D Academy</a>
+        <a href="#tierra">Facilidades</a>
+        <a href="#tierra">Staff</a>
+        <a href="#blog">Blog</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-col-title">Soporte</p>
+        <a href="#footer">Preguntas Frecuentes</a>
+        <a href="#footer">Envíos y Devoluciones</a>
+        <a href="#footer">Términos y Condiciones</a>
+        <a href="#footer">Buscador de Tiendas</a>
+      </div>
+      <div class="footer-col footer-col-social">
+        <p class="footer-col-title">Síguenos</p>
+        <a href="#footer">Instagram</a>
+        <a href="#footer">Facebook</a>
+        <a href="#footer">TikTok</a>
+        <a href="#footer">YouTube</a>
+        <form class="newsletter" id="newsletter">
+          <input type="email" placeholder="Tu correo" aria-label="Correo" required />
+          <button type="submit" aria-label="Suscríbete">SUSCRÍBETE <span class="arrow" aria-hidden="true"></span></button>
+        </form>
+      </div>
+    </nav>
+  </div>
+  <p class="footer-legal">Estos productos no han sido evaluados por la FDA. No están destinados a diagnosticar, tratar, curar ni prevenir ninguna enfermedad. © 2026 E&amp;D Herbs Natural Products LLC. Todos los derechos reservados.</p>
+</footer>
+
+<script src="app-prop2.js"></script>
+</body>
+</html>
