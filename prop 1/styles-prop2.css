@@ -7,7 +7,7 @@
 @font-face{font-family:"CS Vincero Drawn";src:url(assets-prop2/fonts/CSVinceroDrawn-Regular.woff2) format("woff2");font-weight:700;font-style:normal;font-display:swap;}
 @font-face{font-family:"CS Vincero Drawn";src:url(assets-prop2/fonts/CSVinceroDrawn-Italic.woff2) format("woff2");font-weight:700;font-style:italic;font-display:swap;}
 :root{
-  --cream:#F7EDEE;
+  --cream:#F1ECE5;
   --cream-2:#FBF4F4;
   --green:#4A856F;
   --green-mid:#4A856F;
