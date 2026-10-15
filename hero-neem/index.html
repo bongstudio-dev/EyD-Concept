@@ -293,7 +293,7 @@ new GLTFLoader().load('neem.glb?v=12', (gltf) => {
   raiz.rotation.y = -Math.PI / 2;                // la etiqueta mira a cámara
   frasco.add(raiz);
   sombra.position.y = -alto / 2 - 0.12; sombra.scale.setScalar(tam.x * k / 1.1);
-  document.getElementById('cargando').classList.add('oculta');
+  document.getElementById('cargando').hidden = true;
   listo = true; t0 = performance.now();
 }, undefined, (e) => { document.getElementById('cargando').textContent = 'No se pudo cargar el frasco'; console.error(e); });
 
