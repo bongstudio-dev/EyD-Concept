@@ -119,6 +119,7 @@ canvas#gl:active { cursor: grabbing; }
 .ajustes-btn:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .ajustes { position: absolute; z-index: 5; left: var(--pad); right: var(--pad); top: calc(env(safe-area-inset-top, 0px) + 124px); max-width: 360px;
   background: rgba(255,255,255,.94); color: var(--green-deep); border-radius: 18px; padding: 14px 16px; display: grid; gap: 10px; box-shadow: 0 14px 34px -22px rgba(38,67,56,.7); touch-action: auto; user-select: auto; }
+[hidden] { display: none !important; }
 .ajustes label { display: grid; grid-template-columns: 92px 1fr 44px; align-items: center; gap: 10px; font-size: 12px; }
 .ajustes input[type=range] { width: 100%; accent-color: var(--green); }
 .ajustes output { text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
