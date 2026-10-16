@@ -237,6 +237,7 @@ canvas#cielo { position: absolute; inset: 0; width: 100%; height: 100%; display:
     <label for="sV">Alto del arte<input id="sV" type="range" min="60" max="160" step="1"><output id="oV"></output></label>
     <label for="sQ">Curvatura<input id="sQ" type="range" min="20" max="100" step="1"><output id="oQ"></output></label>
     <label for="sOff">Giro fino<input id="sOff" type="range" min="-20" max="20" step="0.5"><output id="oOff"></output></label>
+    <label for="sTx">Textura papel<input id="sTx" type="range" min="0" max="100" step="1"><output id="oTx"></output></label>
     <label for="sBr">Brillo<input id="sBr" type="range" min="70" max="150" step="1"><output id="oBr"></output></label>
     <div class="fila"><button type="button" id="restablecer">Restablecer</button><button type="button" id="copiar">Copiar valores</button></div>
   </div>
@@ -337,7 +338,7 @@ if (gl) {
      en y=5 y borde de abajo en y=1002 que sube 35 px en los costados (perspectiva). El arte da la vuelta
      entera al cilindro: 0.888 vueltas de textura por vuelta de frasco: en el centro el arte queda a su proporción real. */
   const fs = `#version 300 es
-    precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uLab, uSh; uniform float uRot, uK, uQ, uV, uBr;
+    precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uLab, uSh; uniform float uRot, uK, uQ, uV, uBr, uTx;
     const float PI = 3.14159265;
     void main(){
       vec4 sh = texture(uSh, vec2(vUv.x, 1.0 - vUv.y));
@@ -349,8 +350,9 @@ if (gl) {
       float u = .5 + uRot + uK * asin(s * uQ) / (uQ * 2.0 * PI);
       vec3 c = texture(uLab, vec2(u, v)).rgb;
       float curva = mix(.9, 1.0, sqrt(1.0 - s * s));
-      vec3 col = c * pow(sh.r, 1.1) * curva * uBr;
-      col += vec3(.06) * smoothstep(.62, .93, sh.r);
+      float luz = mix(sh.g, sh.r, uTx);   // g = luz suave, r = luz con el grano del papel de la foto
+      vec3 col = c * pow(luz, 1.1) * curva * uBr;
+      col += vec3(.06) * smoothstep(.62, .93, luz);
       col = clamp(col, 0.0, 1.0);
       o = vec4(col * sh.a, sh.a);
     }`;
@@ -360,13 +362,13 @@ if (gl) {
     const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    lu = { rot: gl.getUniformLocation(prog, 'uRot'), k: gl.getUniformLocation(prog, 'uK'), q: gl.getUniformLocation(prog, 'uQ'), v: gl.getUniformLocation(prog, 'uV'), br: gl.getUniformLocation(prog, 'uBr') };
+    lu = { rot: gl.getUniformLocation(prog, 'uRot'), k: gl.getUniformLocation(prog, 'uK'), q: gl.getUniformLocation(prog, 'uQ'), v: gl.getUniformLocation(prog, 'uV'), br: gl.getUniformLocation(prog, 'uBr'), tx: gl.getUniformLocation(prog, 'uTx') };
     gl.uniform1i(gl.getUniformLocation(prog, 'uLab'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'uSh'), 1);
     gl.disable(gl.BLEND);
   }
 }
 /* ---- ajustes de la etiqueta (se recuerdan en este navegador) */
-const AJ0 = { k: 995, q: 79, v: 100, br: 120, off: 1.5 };   // valores elegidos por Marcos (16/10)
+const AJ0 = { k: 995, q: 79, v: 100, br: 120, off: 1.5, tx: 0 };   // valores elegidos por Marcos (16/10)
 const aj = { ...AJ0 };
 try { Object.assign(aj, JSON.parse(localStorage.getItem('eyd-jars-ajustes-v1') || '{}')); } catch (e) {}
 const aniso = gl && (gl.getExtension('EXT_texture_filter_anisotropic'));
@@ -420,7 +422,7 @@ function pintarEtiqueta(f, rot) {
   f.ultimaRot = rot;
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texEtiq[f.p.id]);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texSombra);
-  gl.uniform1f(lu.rot, rot + aj.off / 100); gl.uniform1f(lu.k, aj.k / 1000); gl.uniform1f(lu.q, aj.q / 100); gl.uniform1f(lu.v, aj.v / 100); gl.uniform1f(lu.br, aj.br / 100);
+  gl.uniform1f(lu.rot, rot + aj.off / 100); gl.uniform1f(lu.k, aj.k / 1000); gl.uniform1f(lu.q, aj.q / 100); gl.uniform1f(lu.v, aj.v / 100); gl.uniform1f(lu.br, aj.br / 100); gl.uniform1f(lu.tx, aj.tx / 100);
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   f.ctx.clearRect(0, 0, bufW, bufH); f.ctx.drawImage(glc, 0, 0);
@@ -544,7 +546,7 @@ function cuadro(now) {
 /* ====================================================== ajustes */
 const campos = {
   k: ['sK', 'oK', (v) => (v / 1000).toFixed(3) + ' v'], v: ['sV', 'oV', (v) => v + '%'], q: ['sQ', 'oQ', (v) => (v / 100).toFixed(2)],
-  off: ['sOff', 'oOff', (v) => v + '%'], br: ['sBr', 'oBr', (v) => v + '%']
+  off: ['sOff', 'oOff', (v) => v + '%'], tx: ['sTx', 'oTx', (v) => v + '%'], br: ['sBr', 'oBr', (v) => v + '%']
 };
 function pintarAj() { for (const k in campos) { const [i, o, f] = campos[k]; $(i).value = aj[k]; $(o).textContent = f(aj[k]); } }
 function guardarAj() { frascos.forEach((f) => { f.ultimaRot = NaN; }); try { localStorage.setItem('eyd-jars-ajustes-v1', JSON.stringify(aj)); } catch (e) {} }
@@ -554,7 +556,7 @@ const panelAj = $('ajustes'), btnAj = $('ajustesBtn');
 btnAj.addEventListener('click', () => { panelAj.hidden = !panelAj.hidden; btnAj.setAttribute('aria-expanded', String(!panelAj.hidden)); });
 $('restablecer').addEventListener('click', () => { Object.assign(aj, AJ0); pintarAj(); guardarAj(); });
 $('copiar').addEventListener('click', (e) => {
-  const txt = `ancho del arte ${(aj.k / 1000).toFixed(3)} · alto del arte ${aj.v}% · curvatura ${(aj.q / 100).toFixed(2)} · giro fino ${aj.off}% · brillo ${aj.br}%`;
+  const txt = `ancho del arte ${(aj.k / 1000).toFixed(3)} · alto del arte ${aj.v}% · curvatura ${(aj.q / 100).toFixed(2)} · giro fino ${aj.off}% · textura papel ${aj.tx}% · brillo ${aj.br}%`;
   navigator.clipboard.writeText(txt).then(() => { e.target.textContent = 'Copiado'; setTimeout(() => { e.target.textContent = 'Copiar valores'; }, 1400); }).catch(() => { e.target.textContent = txt; });
 });
 escena.addEventListener('pointerdown', () => { if (!panelAj.hidden) { panelAj.hidden = true; btnAj.setAttribute('aria-expanded', 'false'); } });
