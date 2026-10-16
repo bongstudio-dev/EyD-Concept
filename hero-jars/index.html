@@ -384,9 +384,9 @@ if (gl) {
   }
 }
 /* ---- ajustes de la etiqueta (se recuerdan en este navegador) */
-const AJ0 = { k: 960, q: 79, v: 100, br: 120, off: 4, tx: 47, e: 100, d: 75, bl: 60 };   // valores elegidos por Marcos (16/10)
+const AJ0 = { k: 960, q: 79, v: 100, br: 120, off: 4, tx: 47, e: 100, d: 75, bl: 0 };   // desenfoque en movimiento apagado (16/10: no ayudaba); el slider sigue para probar   // valores elegidos por Marcos (16/10)
 const aj = { ...AJ0 };
-try { Object.assign(aj, JSON.parse(localStorage.getItem('eyd-jars-ajustes-v1') || '{}')); } catch (e) {}
+try { const g = JSON.parse(localStorage.getItem('eyd-jars-ajustes-v1') || '{}'); delete g.bl; Object.assign(aj, g); } catch (e) {}   // 'bl' guardado de antes se ignora: arranca apagado
 const aniso = gl && (gl.getExtension('EXT_texture_filter_anisotropic'));
 function subir(img, unit, repetirU) {
   const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
