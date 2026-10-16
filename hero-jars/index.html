@@ -366,7 +366,7 @@ if (gl) {
   }
 }
 /* ---- ajustes de la etiqueta (se recuerdan en este navegador) */
-const AJ0 = { k: 888, q: 85, v: 100, br: 110, off: 0 };
+const AJ0 = { k: 995, q: 79, v: 100, br: 120, off: 1.5 };   // valores elegidos por Marcos (16/10)
 const aj = { ...AJ0 };
 try { Object.assign(aj, JSON.parse(localStorage.getItem('eyd-jars-ajustes-v1') || '{}')); } catch (e) {}
 const aniso = gl && (gl.getExtension('EXT_texture_filter_anisotropic'));
