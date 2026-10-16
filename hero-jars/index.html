@@ -278,6 +278,7 @@ const PRODUCTOS = [
   { id: 'diente', nombre: 'Diente de León', parte: 'Raíz', cient: 'Taraxacum officinale', accion: 'Desintoxicante y Diurético', cant: '500 mg · 60 cápsulas', tipo: 'Suplemento herbario', acento: '#3F619E', profundo: '#2A4170', cielo: [0.27, 0.40, 0.62] }
 ];
 const N = PRODUCTOS.length;
+const QS = new URLSearchParams(location.search);   // solo para pruebas: ?lab=1600 y ?ss=1
 const DBG_ROT = +(new URLSearchParams(location.search).get('rot') || 0);   // solo para pruebas: ?rot=0.1
 const mod = (a, n) => ((a % n) + n) % n;
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -358,7 +359,7 @@ if (gl) {
       float u = .5 + uRot + uK * th / (2.0 * PI);
       vec2 uvT = vec2(u, v);
       vec2 gx = dFdx(uvT), gy = dFdy(uvT);
-      float lim = 3.0 / 3072.0;   // el filtro no baja a mipmaps minúsculos en el borde: ahí se hacía una mancha
+      float lim = 3.0 / float(textureSize(uLab, 0).x);   // el filtro no baja a mipmaps minúsculos en el borde: ahí se hacía una mancha
       gx.x = clamp(gx.x, -lim, lim); gy.x = clamp(gy.x, -lim, lim);
       vec3 c = textureGrad(uLab, uvT, gx, gy).rgb;
       float nz = sqrt(max(1.0 - s * s, 0.0));   // normal del cilindro: luz difusa que cae hacia los bordes
@@ -424,7 +425,7 @@ function medir() {
     f.el.style.marginLeft = -Wj / 2 + 'px'; f.el.style.marginTop = -Hj / 2 + 'px';
     f.cv.width = bufW; f.cv.height = bufH; f.ultimaRot = NaN;
   }
-  SS = Math.max(1, Math.min(2, 1200 / bufW));
+  SS = QS.get('ss') ? +QS.get('ss') : Math.max(1, Math.min(2, 1200 / bufW));
   if (gl) { glc.width = Math.round(bufW * SS); glc.height = Math.round(bufH * SS); gl.viewport(0, 0, glc.width, glc.height); }
   if (cgl) { const k = 0.5; cieloCv.width = Math.max(2, Math.round(W * k)); cieloCv.height = Math.max(2, Math.round(H * k)); cgl.viewport(0, 0, cieloCv.width, cieloCv.height); }
 }
@@ -453,7 +454,7 @@ function activar(i, conGiro = true) {
   if (i === activo) return;
   activo = i;
   const f = frascos[i];
-  if (conGiro && !quieto) { f.spin = 1; f.spinT0 = performance.now(); }
+  if (conGiro && !quieto && !QS.has('rot')) { f.spin = 1; f.spinT0 = performance.now(); }
   $('cNombre').textContent = f.p.nombre; $('cNum').textContent = String(i + 1).padStart(2, '0') + ' / ' + String(N).padStart(2, '0');
   hero.style.setProperty('--accent', f.p.acento); hero.style.setProperty('--accent-deep', f.p.profundo);
   frascos.forEach((g) => g.el.setAttribute('aria-current', g === f ? 'true' : 'false'));
@@ -542,7 +543,7 @@ function cuadro(now) {
     // etiqueta: arrastre con inercia, vuelve al frente y gira una vuelta al elegirse
     if (!(arrastrando && esActivo)) f.rotBase = lerp(f.rotBase, Math.round(f.rotBase), 1 - Math.exp(-dt * 4.5));
     if (f.spin > 0) { const p = clamp((performance.now() - f.spinT0) / 1300, 0, 1); f.spin = 1 - ease(p); if (p >= 1) f.spin = 0; }
-    const vaiven = quieto ? 0 : Math.sin(t * 0.6 + f.i * 1.7) * (esActivo ? 0.03 : 0.012);
+    const vaiven = quieto || QS.has('rot') ? 0 : Math.sin(t * 0.6 + f.i * 1.7) * (esActivo ? 0.03 : 0.012);
     const rotEt = f.rotBase + f.spin + vaiven + (esActivo ? mira.x * 0.05 : 0) + (esActivo ? DBG_ROT : 0);
     if (op > 0.01) pintarEtiqueta(f, rotEt);
   }
@@ -579,7 +580,7 @@ escena.addEventListener('pointerdown', () => { if (!panelAj.hidden) { panelAj.hi
 /* ====================================================== arranque */
 (async () => {
   try {
-    const [sombra, ...etqs] = await Promise.all([cargar('img/frasco-sombreado.png'), ...PRODUCTOS.map((p) => cargar('img/etiqueta-' + p.id + '.webp'))]);
+    const [sombra, ...etqs] = await Promise.all([cargar('img/frasco-sombreado.png'), ...PRODUCTOS.map((p) => cargar('img/etiqueta-' + (QS.get('lab') ? QS.get('lab') + '-' : '') + p.id + '.webp'))]);
     if (!gl || !lu) throw new Error('WebGL2 no disponible');
     texSombra = subir(sombra, 1, false);
     PRODUCTOS.forEach((p, i) => { texEtiq[p.id] = subir(etqs[i], 0, true); });
