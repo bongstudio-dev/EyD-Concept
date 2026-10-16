@@ -337,8 +337,8 @@ let lu = null, texSombra = null;
 const texEtiq = {};
 if (gl) {
   const vs = '#version 300 es\nin vec2 p; out vec2 vUv; void main(){ vUv = p * .5 + .5; gl_Position = vec4(p, 0., 1.); }';
-  /* Geometría medida sobre la foto (recorte 810 x 1006): eje en x=402, radio 403, borde de arriba plano
-     en y=5 y borde de abajo en y=1002 que sube 35 px en los costados (perspectiva). El arte da la vuelta
+  /* Geometría medida sobre la foto (recorte 810 x 1006, mediciones por fila del 16/10): eje en x=404, radio 402.2,
+     borde de arriba plano en y=6.7 y borde de abajo 1000.4 + 5.37 s^2 - 42.5 s^4 (sube ~37 px en los costados). El arte da la vuelta
      entera al cilindro: 0.888 vueltas de textura por vuelta de frasco: en el centro el arte queda a su proporción real. */
   const fs = `#version 300 es
     precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uLab, uSh; uniform float uRot, uK, uQ, uV, uBr, uTx, uE, uD;
@@ -346,9 +346,9 @@ if (gl) {
     void main(){
       vec4 sh = texture(uSh, vec2(vUv.x, 1.0 - vUv.y));
       float px = vUv.x * 810.0, py = (1.0 - vUv.y) * 1006.0;
-      float s = clamp((px - 402.0) / 403.0, -.999, .999);
-      float bot = 1002.0 - 35.0 * pow(abs(s), 4.0);
-      float v = clamp(.5 + ((py - 5.0) / (bot - 5.0) - .5) / uV, 0.0, 1.0);
+      float s = clamp((px - 404.0) / 402.2, -1.0, 1.0);
+      float s2 = s * s; float bot = 1000.4 + 5.37 * s2 - 42.5 * s2 * s2;
+      float v = clamp(.5 + ((py - 6.7) / (bot - 6.7) - .5) / uV, 0.0, 1.0);
       // centro plano (proporción real del arte) y, hacia el borde, cilindro de verdad: el texto se achica hasta desaparecer en la silueta
       float sa = abs(s);
       float th = mix(asin(s * uQ) / uQ, asin(s), uE * smoothstep(.65, 1.0, sa));
