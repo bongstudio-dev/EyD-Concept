@@ -239,6 +239,7 @@ canvas#cielo { position: absolute; inset: 0; width: 100%; height: 100%; display:
     <label for="sOff">Giro fino<input id="sOff" type="range" min="-20" max="20" step="0.5"><output id="oOff"></output></label>
     <label for="sE">Rodeo borde<input id="sE" type="range" min="0" max="100" step="1"><output id="oE"></output></label>
     <label for="sD">Sombra borde<input id="sD" type="range" min="0" max="80" step="1"><output id="oD"></output></label>
+    <label for="sBl">Desenfoque mov.<input id="sBl" type="range" min="0" max="100" step="1"><output id="oBl"></output></label>
     <label for="sTx">Textura papel<input id="sTx" type="range" min="0" max="100" step="1"><output id="oTx"></output></label>
     <label for="sBr">Brillo<input id="sBr" type="range" min="70" max="150" step="1"><output id="oBr"></output></label>
     <div class="fila"><button type="button" id="restablecer">Restablecer</button><button type="button" id="copiar">Copiar valores</button></div>
@@ -383,7 +384,7 @@ if (gl) {
   }
 }
 /* ---- ajustes de la etiqueta (se recuerdan en este navegador) */
-const AJ0 = { k: 960, q: 79, v: 100, br: 120, off: 4, tx: 47, e: 100, d: 75 };   // valores elegidos por Marcos (16/10)
+const AJ0 = { k: 960, q: 79, v: 100, br: 120, off: 4, tx: 47, e: 100, d: 75, bl: 60 };   // valores elegidos por Marcos (16/10)
 const aj = { ...AJ0 };
 try { Object.assign(aj, JSON.parse(localStorage.getItem('eyd-jars-ajustes-v1') || '{}')); } catch (e) {}
 const aniso = gl && (gl.getExtension('EXT_texture_filter_anisotropic'));
@@ -409,7 +410,7 @@ const frascos = PRODUCTOS.map((p, i) => {
   const img = document.createElement('img'); img.src = 'img/frasco.webp'; img.alt = ''; img.decoding = 'async';
   const cv = document.createElement('canvas'); const ctx = cv.getContext('2d');
   el.append(img, cv); escena.append(el);
-  return { p, i, el, cv, ctx, rotBase: 0, spin: 0, spinT0: -1, ultimaRot: NaN, x: 0, y: 0, esc: 1, rot: 0, op: 0 };
+  return { p, i, el, cv, ctx, rotBase: 0, spin: 0, spinT0: -1, ultimaRot: NaN, rotPrev: 0, vel: 0, blurPrev: -1, brPrev: -1, x: 0, y: 0, esc: 1, rot: 0, op: 0 };
 });
 
 let W = 0, H = 0, Wj = 0, Hj = 0, bufW = 0, bufH = 0, vertical = false, SS = 1;
@@ -445,7 +446,7 @@ function pintarEtiqueta(f, rot) {
 }
 
 /* ====================================================== estado */
-let cur = 0, objetivo = 0, activo = 0, det = 0, detObj = 0;
+let cur = 0, objetivo = 0, activo = 0, det = 0, detObj = 0, curPrev = 0;
 let arrastrando = false, ultX = 0, vel = 0, movido = 0, tocoUna = false;
 const mira = { x: 0, y: 0, ox: 0, oy: 0 };
 let t0 = 0, listo = false;
@@ -515,6 +516,7 @@ function cuadro(now) {
   const dt = Math.min((now - ultT) / 1000, 0.05); ultT = now; const t = now / 1000;
 
   // carrusel y detalle
+  curPrev = cur;
   cur = arrastrando ? cur : lerp(cur, objetivo, 1 - Math.exp(-dt * (quieto ? 60 : 6.5)));
   det = lerp(det, detObj, 1 - Math.exp(-dt * (quieto ? 60 : 5)));
   mira.x = lerp(mira.x, mira.ox, 0.04); mira.y = lerp(mira.y, mira.oy, 0.04);
@@ -546,6 +548,18 @@ function cuadro(now) {
     const vaiven = quieto || QS.has('rot') ? 0 : Math.sin(t * 0.6 + f.i * 1.7) * (esActivo ? 0.03 : 0.012);
     const rotEt = f.rotBase + f.spin + vaiven + (esActivo ? mira.x * 0.05 : 0) + (esActivo ? DBG_ROT : 0);
     if (op > 0.01) pintarEtiqueta(f, rotEt);
+
+    // desenfoque por velocidad (como Agrumea: filter blur() que crece con la rapidez y vuelve a 0 en reposo) + brillo menor en los laterales
+    const v = (Math.abs(rotEt - f.rotPrev) / Math.max(dt, 1e-3)) + (esActivo ? Math.abs(cur - curPrev) / Math.max(dt, 1e-3) * 0.4 : 0);
+    f.rotPrev = rotEt; f.vel = lerp(f.vel, Math.min(v, 6), 1 - Math.exp(-dt * 12));
+    const rel = Math.min(1, f.vel / 1.5);
+    const bMax = (vertical ? 2 : 4) * (aj.bl / 100);
+    const px = Math.min(vertical ? 2 : 3, ad * ad * 1.2) * (aj.bl > 0 ? 1 : 0) + bMax * rel * rel;
+    const br = 1 - 0.16 * Math.min(ad, 1);
+    if (Math.abs(px - f.blurPrev) > 0.05 || Math.abs(br - f.brPrev) > 0.005) {
+      f.blurPrev = px; f.brPrev = br;
+      f.el.style.filter = px < 0.05 && br > 0.995 ? 'none' : `brightness(${br.toFixed(3)}) blur(${px.toFixed(2)}px)`;
+    }
   }
 
   // cielo
@@ -562,7 +576,7 @@ function cuadro(now) {
 /* ====================================================== ajustes */
 const campos = {
   k: ['sK', 'oK', (v) => (v / 1000).toFixed(3) + ' v'], v: ['sV', 'oV', (v) => v + '%'], q: ['sQ', 'oQ', (v) => (v / 100).toFixed(2)],
-  off: ['sOff', 'oOff', (v) => v + '%'], tx: ['sTx', 'oTx', (v) => v + '%'], e: ['sE', 'oE', (v) => v + '%'], d: ['sD', 'oD', (v) => v + '%'], br: ['sBr', 'oBr', (v) => v + '%']
+  off: ['sOff', 'oOff', (v) => v + '%'], tx: ['sTx', 'oTx', (v) => v + '%'], bl: ['sBl', 'oBl', (v) => v + '%'], e: ['sE', 'oE', (v) => v + '%'], d: ['sD', 'oD', (v) => v + '%'], br: ['sBr', 'oBr', (v) => v + '%']
 };
 function pintarAj() { for (const k in campos) { const [i, o, f] = campos[k]; $(i).value = aj[k]; $(o).textContent = f(aj[k]); } }
 function guardarAj() { frascos.forEach((f) => { f.ultimaRot = NaN; }); try { localStorage.setItem('eyd-jars-ajustes-v1', JSON.stringify(aj)); } catch (e) {} }
@@ -572,7 +586,7 @@ const panelAj = $('ajustes'), btnAj = $('ajustesBtn');
 btnAj.addEventListener('click', () => { panelAj.hidden = !panelAj.hidden; btnAj.setAttribute('aria-expanded', String(!panelAj.hidden)); });
 $('restablecer').addEventListener('click', () => { Object.assign(aj, AJ0); pintarAj(); guardarAj(); });
 $('copiar').addEventListener('click', (e) => {
-  const txt = `ancho del arte ${(aj.k / 1000).toFixed(3)} · alto del arte ${aj.v}% · curvatura ${(aj.q / 100).toFixed(2)} · giro fino ${aj.off}% · rodeo borde ${aj.e}% · sombra borde ${aj.d}% · textura papel ${aj.tx}% · brillo ${aj.br}%`;
+  const txt = `ancho del arte ${(aj.k / 1000).toFixed(3)} · alto del arte ${aj.v}% · curvatura ${(aj.q / 100).toFixed(2)} · giro fino ${aj.off}% · desenfoque mov. ${aj.bl}% · rodeo borde ${aj.e}% · sombra borde ${aj.d}% · textura papel ${aj.tx}% · brillo ${aj.br}%`;
   navigator.clipboard.writeText(txt).then(() => { e.target.textContent = 'Copiado'; setTimeout(() => { e.target.textContent = 'Copiar valores'; }, 1400); }).catch(() => { e.target.textContent = txt; });
 });
 escena.addEventListener('pointerdown', () => { if (!panelAj.hidden) { panelAj.hidden = true; btnAj.setAttribute('aria-expanded', 'false'); } });
