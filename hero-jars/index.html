@@ -346,20 +346,29 @@ if (gl) {
     void main(){
       vec4 sh = texture(uSh, vec2(vUv.x, 1.0 - vUv.y));
       float px = vUv.x * 810.0, py = (1.0 - vUv.y) * 1006.0;
-      float s = clamp((px - 404.0) / 402.2, -1.0, 1.0);
+      float sr = (px - 404.0) / 402.2;
+      float s = clamp(sr, -1.0, 1.0);
+      float fw = fwidth(sr) * 1.0;
+      float corte = 1.0 - smoothstep(1.0 + 2.0 / 402.2 - fw, 1.0 + 2.0 / 402.2 + fw, abs(sr));   // silueta del cilindro, suavizada al tamaño del píxel
       float s2 = s * s; float bot = 1000.4 + 5.37 * s2 - 42.5 * s2 * s2;
       float v = clamp(.5 + ((py - 6.7) / (bot - 6.7) - .5) / uV, 0.0, 1.0);
       // centro plano (proporción real del arte) y, hacia el borde, cilindro de verdad: el texto se achica hasta desaparecer en la silueta
       float sa = abs(s);
       float th = mix(asin(s * uQ) / uQ, asin(s), uE * smoothstep(.65, 1.0, sa));
       float u = .5 + uRot + uK * th / (2.0 * PI);
-      vec3 c = texture(uLab, vec2(u, v)).rgb;
-      float curva = 1.0 - uD * pow(smoothstep(.45, 1.0, sa), 1.4);
+      vec2 uvT = vec2(u, v);
+      vec2 gx = dFdx(uvT), gy = dFdy(uvT);
+      float lim = 3.0 / 3072.0;   // el filtro no baja a mipmaps minúsculos en el borde: ahí se hacía una mancha
+      gx.x = clamp(gx.x, -lim, lim); gy.x = clamp(gy.x, -lim, lim);
+      vec3 c = textureGrad(uLab, uvT, gx, gy).rgb;
+      float nz = sqrt(max(1.0 - s * s, 0.0));   // normal del cilindro: luz difusa que cae hacia los bordes
+      float curva = mix(1.0, pow(nz, .7), uD);
       float luz = mix(sh.g, sh.r, uTx);   // g = luz suave, r = luz con el grano del papel de la foto
       vec3 col = c * pow(luz, 1.1) * curva * uBr;
       col += vec3(.06) * smoothstep(.62, .93, luz);
       col = clamp(col, 0.0, 1.0);
-      o = vec4(col * sh.a, sh.a);   // sin salida temprana: si no, los derivados del mipmap quedan mal en el borde de la máscara
+      float al = sh.a * corte;
+      o = vec4(col * al, al);   // sin salida temprana: si no, los derivados del mipmap quedan mal en el borde de la máscara
     }`;
   const prog = mkProg(gl, vs, fs);
   if (prog) {
@@ -373,7 +382,7 @@ if (gl) {
   }
 }
 /* ---- ajustes de la etiqueta (se recuerdan en este navegador) */
-const AJ0 = { k: 960, q: 79, v: 100, br: 120, off: 4, tx: 47, e: 100, d: 45 };   // valores elegidos por Marcos (16/10)
+const AJ0 = { k: 960, q: 79, v: 100, br: 120, off: 4, tx: 47, e: 100, d: 75 };   // valores elegidos por Marcos (16/10)
 const aj = { ...AJ0 };
 try { Object.assign(aj, JSON.parse(localStorage.getItem('eyd-jars-ajustes-v1') || '{}')); } catch (e) {}
 const aniso = gl && (gl.getExtension('EXT_texture_filter_anisotropic'));
@@ -402,7 +411,7 @@ const frascos = PRODUCTOS.map((p, i) => {
   return { p, i, el, cv, ctx, rotBase: 0, spin: 0, spinT0: -1, ultimaRot: NaN, x: 0, y: 0, esc: 1, rot: 0, op: 0 };
 });
 
-let W = 0, H = 0, Wj = 0, Hj = 0, bufW = 0, bufH = 0, vertical = false;
+let W = 0, H = 0, Wj = 0, Hj = 0, bufW = 0, bufH = 0, vertical = false, SS = 1;
 function medir() {
   W = hero.clientWidth; H = hero.clientHeight;
   vertical = W / H < 0.8;
@@ -415,7 +424,8 @@ function medir() {
     f.el.style.marginLeft = -Wj / 2 + 'px'; f.el.style.marginTop = -Hj / 2 + 'px';
     f.cv.width = bufW; f.cv.height = bufH; f.ultimaRot = NaN;
   }
-  if (gl) { glc.width = bufW; glc.height = bufH; gl.viewport(0, 0, bufW, bufH); }
+  SS = Math.max(1, Math.min(2, 1200 / bufW));
+  if (gl) { glc.width = Math.round(bufW * SS); glc.height = Math.round(bufH * SS); gl.viewport(0, 0, glc.width, glc.height); }
   if (cgl) { const k = 0.5; cieloCv.width = Math.max(2, Math.round(W * k)); cieloCv.height = Math.max(2, Math.round(H * k)); cgl.viewport(0, 0, cieloCv.width, cieloCv.height); }
 }
 new ResizeObserver(() => { if (hero.clientWidth && hero.clientHeight) medir(); }).observe(hero);
@@ -430,7 +440,7 @@ function pintarEtiqueta(f, rot) {
   gl.uniform1f(lu.rot, rot + aj.off / 100); gl.uniform1f(lu.k, aj.k / 1000); gl.uniform1f(lu.q, aj.q / 100); gl.uniform1f(lu.v, aj.v / 100); gl.uniform1f(lu.br, aj.br / 100); gl.uniform1f(lu.tx, aj.tx / 100); gl.uniform1f(lu.e, aj.e / 100); gl.uniform1f(lu.d, aj.d / 100);
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
-  f.ctx.clearRect(0, 0, bufW, bufH); f.ctx.drawImage(glc, 0, 0);
+  f.ctx.clearRect(0, 0, bufW, bufH); f.ctx.imageSmoothingEnabled = true; f.ctx.imageSmoothingQuality = 'high'; f.ctx.drawImage(glc, 0, 0, bufW, bufH);
 }
 
 /* ====================================================== estado */
