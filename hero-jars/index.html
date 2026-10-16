@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<!-- firma:bong
+
+      ##########         #########
+      ###########      #############
+      ############   #################
+      ###########   ###################
+      ##########    ###################
+      ############  ###################
+      #############  #################
+      #############   ###############
+      ############      ###########
+
+                            #####
+      ##     ######     ##########
+      ####   ######   ###########
+      #####  ######  ###########
+      #############  ##########
+      #############  ###################
+      #############  ##################
+      #############   #################
+      #############     #############
+      #############        #######
+
+      E&D HERBS · HERO FRASCOS
+      Prueba de hero con la etiqueta en WebGL sobre el concepto web de E&D Herbs.
+
+      Hola. Si estás leyendo esto, te gusta ver cómo están hechas las cosas.
+      A nosotros también.
+
+      Diseño y desarrollo: Bong Studio
+      Estudio de branding. Córdoba, Argentina. Desde 2019.
+      El frasco es una imagen y lo único que se dibuja en vivo es la etiqueta:
+      un shader la enrolla sobre el cilindro y le pasa la luz de la foto.
+      El cielo es otro shader. No usa librerías.
+
+      CRÉDITOS
+      María Lopez / Brand Designer
+      Marcos Cousseau / Creative Director
+
+      CONTACTO
+      https://bongstudio.ar
+
+      BONG STUDIO · 2026 — Brutally Clear Branding — bongstudio.ar
+-->
+<title>E&amp;D Herbs · Hero frascos (prueba)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Open+Sans:wght@400;600&display=swap">
+<style>
+/* Concepto web del Board: cielo arriba, menú en píldora blanca, lema abajo a la izquierda y
+   "Conoce nuestros productos naturales" a la derecha; debajo, el fondo crema.
+   Método: el frasco es una imagen (webp con alfa) y encima va un canvas con la etiqueta,
+   que un shader enrolla sobre el cilindro. Un solo contexto WebGL sirve a todos los frascos. */
+:root {
+  --cream: #F7EDEE;
+  --cream-2: #FBF4F4;
+  --green: #396957;
+  --green-mid: #3E7962;
+  --green-deep: #264338;
+  --accent: #3E7962;
+  --accent-deep: #264338;
+  --serif: "Averia Serif Libre", Georgia, "Times New Roman", serif;
+  --sans: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --pad: clamp(18px, 4vw, 48px);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; overflow-x: hidden; }
+body { margin: 0; width: 100%; background: var(--cream); color: var(--green-deep); font-family: var(--sans); font-size: 15px; -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+
+.hero { position: relative; height: 100svh; min-height: 560px; overflow: hidden; background: #9DBFD6; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
+canvas#cielo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.fade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(9,14,11,0) 55%, rgba(10,20,15,.42) 100%); }
+
+/* ---- frascos */
+.escena { position: absolute; inset: 0; z-index: 2; cursor: grab; touch-action: pan-y; }
+.escena.arrastra { cursor: grabbing; }
+.frasco { position: absolute; left: 50%; top: 50%; will-change: transform, opacity; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
+.frasco img { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
+.frasco canvas { position: absolute; left: .246%; top: 28.42%; width: 99.508%; height: 64.99%; pointer-events: none; }
+.frasco::after { content: ""; position: absolute; left: 10%; right: 10%; top: 99%; height: 5%; background: radial-gradient(closest-side, rgba(20,30,20,.34), rgba(20,30,20,0)); pointer-events: none; }
+.frasco:focus-visible::before { content: ""; position: absolute; inset: -8px; border: 2px solid var(--cream); border-radius: 18px; }
+
+/* ---- nav */
+.nav {
+  position: absolute; z-index: 4; top: 0; left: 0; right: 0;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 18px) var(--pad) 0;
+}
+.logo { display: block; width: 52px; aspect-ratio: 115.685 / 107.04; background: var(--green); -webkit-mask: url(img/logo.svg) center / contain no-repeat; mask: url(img/logo.svg) center / contain no-repeat; }
+.pill { display: flex; gap: 2px; margin: 0; padding: 5px; list-style: none; background: rgba(255,255,255,.92); border-radius: 999px; box-shadow: 0 8px 24px -18px rgba(38,67,56,.6); }
+.pill a { display: block; padding: 8px 14px; border-radius: 999px; font-family: var(--serif); font-size: 13px; color: var(--green-deep); text-decoration: none; }
+.pill a:hover, .pill a:focus-visible { background: var(--cream); outline: none; }
+.tools { justify-self: end; display: flex; gap: 2px; padding: 5px; background: rgba(255,255,255,.92); border-radius: 999px; }
+.tools button { appearance: none; border: 0; background: transparent; width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; color: var(--green-deep); cursor: pointer; }
+.tools button:hover, .tools button:focus-visible { background: var(--cream); outline: none; }
+.tools svg { width: 17px; height: 17px; }
+.menu-btn { display: none !important; }
+
+/* ---- texto de la portada */
+.overlay {
+  position: absolute; z-index: 3; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(1120px, calc(100% - var(--pad) * 2));
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(28px, 5vh, 64px));
+  color: var(--cream); pointer-events: none; transition: opacity .5s ease, transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.lema { margin: 0; font-family: var(--serif); font-weight: 400; line-height: .84; letter-spacing: -.04em; font-size: clamp(42px, 6vw, 84px); }
+.lema span { display: block; }
+.lema span:last-child { padding-left: 1.4em; font-style: italic; }
+.aside { pointer-events: auto; display: flex; flex-direction: column; text-align: right; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 2.4vw, 32px); line-height: 1.02; letter-spacing: -.03em; color: var(--cream); text-decoration: none; }
+.aside em { display: inline-flex; align-items: center; gap: .35em; justify-content: flex-end; }
+.aside svg { width: .9em; height: .9em; transition: transform .3s ease; }
+.aside:hover svg { transform: translateX(5px); }
+.aside:focus-visible { outline: 2px solid var(--cream); outline-offset: 6px; border-radius: 4px; }
+
+/* ---- selector */
+.ctrl {
+  position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(28px, 5vh, 64px));
+  display: flex; align-items: center; gap: 6px; padding: 5px; background: rgba(255,255,255,.92); border-radius: 999px; transition: opacity .4s ease;
+}
+.ctrl button { appearance: none; border: 0; width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; background: transparent; color: var(--green-deep); cursor: pointer; }
+.ctrl button:hover, .ctrl button:focus-visible { background: var(--cream); outline: none; }
+.ctrl svg { width: 16px; height: 16px; }
+.ctrl .nombre { min-width: 132px; text-align: center; font-family: var(--serif); font-size: 14px; color: var(--green-deep); line-height: 1; }
+.ctrl .nombre small { display: block; margin-top: 4px; font: 600 9px/1 var(--sans); letter-spacing: .16em; color: var(--green-mid); }
+.pista { position: absolute; z-index: 3; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(247,237,238,.8); transition: opacity .6s ease; pointer-events: none; }
+.oculta { opacity: 0; }
+.cargando { position: absolute; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--green-deep); transition: opacity .5s; }
+
+/* ---- ficha del producto (el frasco queda como ancla y el resto entra) */
+.ficha {
+  position: absolute; z-index: 4; right: var(--pad); top: 50%; width: min(420px, 36vw);
+  transform: translate(36px, -50%); opacity: 0; pointer-events: none;
+  background: rgba(247,237,238,.94); border-radius: 26px; padding: 30px 30px 26px; color: var(--green-deep);
+  box-shadow: 0 24px 60px -34px rgba(20,30,20,.7); transition: opacity .45s ease, transform .7s cubic-bezier(.2,.8,.2,1);
+}
+.ficha .eyebrow { margin: 0 0 14px; font: 600 10px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+.ficha h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(40px, 4.4vw, 62px); line-height: .9; letter-spacing: -.04em; color: var(--accent-deep); }
+.ficha .cient { margin: 10px 0 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: 17px; letter-spacing: -.02em; }
+.ficha hr { border: 0; height: 1px; background: rgba(38,67,56,.22); margin: 20px 0; }
+.ficha .accion { margin: 0; font-family: var(--serif); font-weight: 700; font-size: 19px; letter-spacing: -.02em; color: var(--accent-deep); }
+.ficha .cant { margin: 8px 0 0; font-size: 13px; color: rgba(38,67,56,.8); }
+.ficha .volver { margin-top: 22px; appearance: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font: 600 12px/1 var(--sans); letter-spacing: .04em; padding: 12px 18px; border-radius: 999px; background: var(--accent-deep); color: var(--cream); }
+.ficha .volver:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.ficha .volver svg { width: 14px; height: 14px; }
+.hero.detalle .ficha { opacity: 1; transform: translate(0, -50%); pointer-events: auto; transition-delay: .18s; }
+.hero.detalle .overlay { opacity: 0; transform: translate(-50%, 24px); pointer-events: none; }
+.hero.detalle .overlay .aside { pointer-events: none; }
+.hero.detalle .ctrl { opacity: 0; pointer-events: none; }
+.hero.detalle .pista { opacity: 0; }
+
+.mision { padding: clamp(64px, 11vw, 140px) var(--pad); display: flex; justify-content: center; }
+.mision p { margin: 0; max-width: 880px; text-align: center; font-family: var(--serif); font-size: clamp(22px, 2.8vw, 34px); line-height: 1.18; letter-spacing: -.035em; color: var(--green); text-wrap: balance; }
+.mision strong { font-weight: 700; }
+.mision em { color: var(--green-mid); }
+
+@media (max-width: 860px) {
+  .pill { display: none; }
+  .nav { grid-template-columns: 1fr auto; }
+  .menu-btn { display: grid !important; }
+  .tools .solo-desk { display: none; }
+  .ficha { right: var(--pad); left: var(--pad); width: auto; top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); transform: translateY(36px); padding: 22px 22px 20px; border-radius: 22px; }
+  .hero.detalle .ficha { transform: translateY(0); }
+  .ficha h2 { font-size: 44px; }
+  .ficha hr { margin: 14px 0; }
+  .ficha .accion { font-size: 17px; }
+}
+@media (max-width: 560px) {
+  .overlay { flex-direction: column; align-items: flex-start; gap: 18px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 104px); }
+  .aside { text-align: left; align-self: flex-end; }
+  .lema { font-size: clamp(46px, 14vw, 64px); }
+  .ctrl { bottom: calc(env(safe-area-inset-bottom, 0px) + 40px); }
+  .pista { white-space: nowrap; font-size: 9px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); }
+}
+@media (prefers-reduced-motion: reduce) { .aside svg, .pista, .ficha, .overlay { transition: none; } }
+</style>
+</head>
+<body>
+
+<section class="hero" id="hero">
+  <canvas id="cielo" aria-hidden="true"></canvas>
+  <div class="fade"></div>
+  <div class="escena" id="escena" role="group" aria-roledescription="carrusel" aria-label="Frascos de E&amp;D Herbs. Arrastrá para cambiar de producto."></div>
+  <p class="cargando" id="cargando">Cargando frascos</p>
+
+  <nav class="nav" aria-label="Principal">
+    <a href="#hero" aria-label="E&amp;D Herbs, inicio"><span class="logo" role="img" aria-label="E&amp;D Herbs"></span></a>
+    <ul class="pill">
+      <li><a href="#hero">Productos</a></li>
+      <li><a href="#hero">Por condición</a></li>
+      <li><a href="#tierra">Nosotros</a></li>
+      <li><a href="#tierra">Iniciativas</a></li>
+      <li><a href="#tierra">Blog</a></li>
+      <li><a href="#tierra">Contacto</a></li>
+    </ul>
+    <div class="tools">
+      <button type="button" aria-label="Buscar" class="solo-desk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5" stroke-linecap="round"/></svg></button>
+      <button type="button" aria-label="Carrito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h14l-1.2 11.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke-linecap="round"/></svg></button>
+      <button type="button" aria-label="Cuenta" class="solo-desk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.3 7-5.3s5.8 1.7 7 5.3" stroke-linecap="round"/></svg></button>
+      <button type="button" aria-label="Menú" class="menu-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 9h14M5 15h14"/></svg></button>
+    </div>
+  </nav>
+
+  <div class="overlay">
+    <h1 class="lema"><span>The land</span><span>knew first</span></h1>
+    <a class="aside" href="#tierra"><span>Conoce nuestros</span><em>productos naturales <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 7l5 5-5 5"/></svg></em></a>
+  </div>
+
+  <div class="ctrl" role="group" aria-label="Cambiar de producto">
+    <button type="button" id="prev" aria-label="Producto anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M10 7l-5 5 5 5"/></svg></button>
+    <div class="nombre" aria-live="polite"><span id="cNombre">Neem</span><small id="cNum">01 / 04</small></div>
+    <button type="button" id="next" aria-label="Producto siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 7l5 5-5 5"/></svg></button>
+  </div>
+  <span class="pista" id="pista">Arrastrá para girar · tocá el frasco</span>
+
+  <aside class="ficha" id="ficha" aria-live="polite">
+    <p class="eyebrow" id="fTipo">Herbal supplement</p>
+    <h2 id="fNombre">Neem</h2>
+    <p class="cient" id="fCient"></p>
+    <hr>
+    <p class="accion" id="fAccion"></p>
+    <p class="cant" id="fCant"></p>
+    <button class="volver" id="volver" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M10 7l-5 5 5 5"/></svg>Volver</button>
+  </aside>
+</section>
+
+<section class="mision" id="tierra">
+  <p>La tierra <strong>siempre tuvo las respuestas.</strong> Lo que las manos supieron antes que las palabras. Siempre fue así en Moca, por generaciones, una familia trabajó con <strong>amor y sacrificio</strong> para darte lo que te pertenecía antes de que lo supieras. <em>The land knew first.</em></p>
+</section>
+
+<script>
+console.log('%cE&D Herbs · Hero frascos\nDiseño y desarrollo: Bong Studio\nMaría Lopez / Brand Designer · Marcos Cousseau / Creative Director\nhttps://bongstudio.ar', 'font-family:monospace;color:#396957');
+(() => {
+'use strict';
+const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hero = document.getElementById('hero');
+const escena = document.getElementById('escena');
+const $ = (id) => document.getElementById(id);
+const dprMax = () => Math.min(window.devicePixelRatio || 1, 2);
+
+/* Textos tal como figuran en cada etiqueta. */
+const PRODUCTOS = [
+  { id: 'neem', nombre: 'Neem', parte: 'Leaf', cient: 'Azadirachta indica', accion: 'Digestive System / Ayurveda', cant: '500 mg · 60 capsules', tipo: 'Herbal supplement', acento: '#3E7962', profundo: '#264338', cielo: [0.24, 0.47, 0.38] },
+  { id: 'turmeric', nombre: 'Turmeric', parte: 'Root', cient: 'Curcuma longa', accion: 'Optimal Wellness / Inflammation', cant: '575 mg · 60 capsules', tipo: 'Herbal supplement', acento: '#A57A2E', profundo: '#6E521F', cielo: [0.72, 0.55, 0.23] },
+  { id: 'valerian', nombre: 'Valerian', parte: 'Root', cient: 'Valerian officinalis', accion: 'Relaxation and Rest', cant: '400 mg · 60 capsules', tipo: 'Herbal supplement', acento: '#8A5F92', profundo: '#593A60', cielo: [0.58, 0.43, 0.59] },
+  { id: 'diente', nombre: 'Diente de León', parte: 'Raíz', cient: 'Taraxacum officinale', accion: 'Desintoxicante y Diurético', cant: '500 mg · 60 cápsulas', tipo: 'Suplemento herbario', acento: '#3F619E', profundo: '#2A4170', cielo: [0.27, 0.40, 0.62] }
+];
+const N = PRODUCTOS.length;
+const mod = (a, n) => ((a % n) + n) % n;
+const lerp = (a, b, k) => a + (b - a) * k;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const ease = (x) => 1 - Math.pow(1 - x, 4);
+
+/* ====================================================== cielo (shader de pantalla completa) */
+const cieloCv = $('cielo');
+const cgl = cieloCv.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'low-power' });
+let cieloU = null;
+if (cgl) {
+  const vs = '#version 300 es\nin vec2 p; out vec2 vUv; void main(){ vUv = p * .5 + .5; gl_Position = vec4(p, 0., 1.); }';
+  const fs = `#version 300 es
+    precision highp float; in vec2 vUv; out vec4 o; uniform float t; uniform vec2 res; uniform vec2 mira; uniform vec3 tinte; uniform float amt;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+      return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
+    float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 5; i++) { v += a*n(p); p = p*2.03 + vec2(1.7, 9.2); a *= .5; } return v; }
+    void main(){
+      vec2 uv = vUv; float asp = res.x / res.y; vec2 p = vec2((uv.x - .5) * asp, uv.y) + mira * .03;
+      vec3 alto = vec3(.42, .62, .80), medio = vec3(.66, .79, .88), horizonte = vec3(.96, .86, .70);
+      horizonte = mix(horizonte, tinte, amt * .55); medio = mix(medio, tinte, amt * .22);
+      vec3 c = mix(horizonte, medio, smoothstep(.12, .5, uv.y)); c = mix(c, alto, smoothstep(.5, 1., uv.y));
+      float s = exp(-length((p - vec2(.42*asp, .34)) * vec2(1., 1.6)) * 3.); c += vec3(1., .78, .5) * s * .35;
+      vec2 q = p * vec2(1.2, 3.2); float k = fbm(q * 1.4 + vec2(t * .012, 0.)); float k2 = fbm(q * 2.6 + vec2(t * .02, 3.));
+      float banda = smoothstep(1.05, .35, uv.y) * smoothstep(.12, .3, uv.y);
+      float nube = smoothstep(.40, .66, k * .72 + k2 * .42) * banda;
+      float sombraNube = smoothstep(.5, .9, k2) * nube;
+      vec3 nubeCol = mix(vec3(1., .96, .9), vec3(.74, .76, .80), sombraNube);
+      c = mix(c, nubeCol, nube * .95);
+      float tierra = smoothstep(.17, .11, uv.y + (n(vec2(p.x * 3., 0.)) - .5) * .02);
+      c = mix(c, mix(vec3(.36, .46, .38), tinte * .6, amt * .35), tierra * .9);
+      c = mix(c, vec3(.20, .30, .22), smoothstep(.11, 0., uv.y));
+      o = vec4(c, 1.);
+    }`;
+  const prog = mkProg(cgl, vs, fs);
+  if (prog) {
+    cgl.useProgram(prog);
+    const b = cgl.createBuffer(); cgl.bindBuffer(cgl.ARRAY_BUFFER, b);
+    cgl.bufferData(cgl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), cgl.STATIC_DRAW);
+    const loc = cgl.getAttribLocation(prog, 'p'); cgl.enableVertexAttribArray(loc); cgl.vertexAttribPointer(loc, 2, cgl.FLOAT, false, 0, 0);
+    cieloU = { t: cgl.getUniformLocation(prog, 't'), res: cgl.getUniformLocation(prog, 'res'), mira: cgl.getUniformLocation(prog, 'mira'), tinte: cgl.getUniformLocation(prog, 'tinte'), amt: cgl.getUniformLocation(prog, 'amt') };
+  }
+}
+function mkProg(gl, vsSrc, fsSrc) {
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; } return s; };
+  const v = sh(gl.VERTEX_SHADER, vsSrc), f = sh(gl.FRAGMENT_SHADER, fsSrc); if (!v || !f) return null;
+  const p = gl.createProgram(); gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(p)); return null; }
+  return p;
+}
+
+/* ====================================================== etiqueta (un contexto para todos los frascos) */
+const glc = document.createElement('canvas');
+const gl = glc.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false });
+let lu = null, texSombra = null;
+const texEtiq = {};
+if (gl) {
+  const vs = '#version 300 es\nin vec2 p; out vec2 vUv; void main(){ vUv = p * .5 + .5; gl_Position = vec4(p, 0., 1.); }';
+  /* Geometría medida sobre la foto (recorte 810 x 1006): eje en x=402, radio 403, borde de arriba plano
+     en y=5 y borde de abajo en y=1002 que sube 35 px en los costados (perspectiva). El arte da la vuelta
+     entera al cilindro: 0.888 vueltas de textura por vuelta de frasco para que no se vea estirado. */
+  const fs = `#version 300 es
+    precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uLab, uSh; uniform float uRot;
+    const float PI = 3.14159265;
+    void main(){
+      vec4 sh = texture(uSh, vec2(vUv.x, 1.0 - vUv.y));
+      if (sh.a < .003) { o = vec4(0.); return; }
+      float px = vUv.x * 810.0, py = (1.0 - vUv.y) * 1006.0;
+      float s = clamp((px - 402.0) / 403.0, -.999, .999);
+      float bot = 1002.0 - 35.0 * pow(abs(s), 4.0);
+      float v = clamp((py - 5.0) / (bot - 5.0), 0.0, 1.0);
+      float u = .5 + uRot + asin(s) / (2.0 * PI * .888);
+      vec3 c = texture(uLab, vec2(u, v)).rgb;
+      float curva = mix(.84, 1.0, sqrt(1.0 - s * s));
+      vec3 col = c * pow(sh.r, 1.1) * curva * 1.1;
+      col += vec3(.06) * smoothstep(.62, .93, sh.r);
+      col = clamp(col, 0.0, 1.0);
+      o = vec4(col * sh.a, sh.a);
+    }`;
+  const prog = mkProg(gl, vs, fs);
+  if (prog) {
+    gl.useProgram(prog);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    lu = { rot: gl.getUniformLocation(prog, 'uRot') };
+    gl.uniform1i(gl.getUniformLocation(prog, 'uLab'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'uSh'), 1);
+    gl.disable(gl.BLEND);
+  }
+}
+const aniso = gl && (gl.getExtension('EXT_texture_filter_anisotropic'));
+function subir(img, unit, repetirU) {
+  const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, repetirU ? gl.REPEAT : gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  if (aniso) gl.texParameterf(gl.TEXTURE_2D, aniso.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+  return t;
+}
+const cargar = (src) => new Promise((ok, mal) => { const i = new Image(); i.decoding = 'async'; i.onload = () => ok(i); i.onerror = () => mal(new Error('No cargó ' + src)); i.src = src; });
+
+/* ====================================================== frascos */
+const frascos = PRODUCTOS.map((p, i) => {
+  const el = document.createElement('div');
+  el.className = 'frasco'; el.setAttribute('role', 'button'); el.tabIndex = 0;
+  el.setAttribute('aria-label', p.nombre);
+  const img = document.createElement('img'); img.src = 'img/frasco.webp'; img.alt = ''; img.decoding = 'async';
+  const cv = document.createElement('canvas'); const ctx = cv.getContext('2d');
+  el.append(img, cv); escena.append(el);
+  return { p, i, el, cv, ctx, rotBase: 0, spin: 0, spinT0: -1, ultimaRot: NaN, x: 0, y: 0, esc: 1, rot: 0, op: 0 };
+});
+
+let W = 0, H = 0, Wj = 0, Hj = 0, bufW = 0, bufH = 0, vertical = false;
+function medir() {
+  W = hero.clientWidth; H = hero.clientHeight;
+  vertical = W / H < 0.8;
+  Hj = vertical ? Math.min(H * 0.5, W * 1.15) : Math.min(H * 0.7, W * 0.6);
+  Wj = Hj * 814 / 1548;
+  const dpr = dprMax();
+  bufW = Math.round(Wj * 0.995 * dpr); bufH = Math.round(Hj * 0.65 * dpr);
+  for (const f of frascos) {
+    f.el.style.width = Wj + 'px'; f.el.style.height = Hj + 'px';
+    f.el.style.marginLeft = -Wj / 2 + 'px'; f.el.style.marginTop = -Hj / 2 + 'px';
+    f.cv.width = bufW; f.cv.height = bufH; f.ultimaRot = NaN;
+  }
+  if (gl) { glc.width = bufW; glc.height = bufH; gl.viewport(0, 0, bufW, bufH); }
+  if (cgl) { const k = 0.5; cieloCv.width = Math.max(2, Math.round(W * k)); cieloCv.height = Math.max(2, Math.round(H * k)); cgl.viewport(0, 0, cieloCv.width, cieloCv.height); }
+}
+new ResizeObserver(() => { if (hero.clientWidth && hero.clientHeight) medir(); }).observe(hero);
+medir();
+
+function pintarEtiqueta(f, rot) {
+  if (!gl || !lu || !texEtiq[f.p.id] || !bufW) return;
+  if (Math.abs(rot - f.ultimaRot) < 0.0004) return;
+  f.ultimaRot = rot;
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texEtiq[f.p.id]);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texSombra);
+  gl.uniform1f(lu.rot, rot);
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  f.ctx.clearRect(0, 0, bufW, bufH); f.ctx.drawImage(glc, 0, 0);
+}
+
+/* ====================================================== estado */
+let cur = 0, objetivo = 0, activo = 0, det = 0, detObj = 0;
+let arrastrando = false, ultX = 0, vel = 0, movido = 0, tocoUna = false;
+const mira = { x: 0, y: 0, ox: 0, oy: 0 };
+let t0 = 0, listo = false;
+
+function activar(i, conGiro = true) {
+  if (i === activo) return;
+  activo = i;
+  const f = frascos[i];
+  if (conGiro && !quieto) { f.spin = 1; f.spinT0 = performance.now(); }
+  $('cNombre').textContent = f.p.nombre; $('cNum').textContent = String(i + 1).padStart(2, '0') + ' / ' + String(N).padStart(2, '0');
+  hero.style.setProperty('--accent', f.p.acento); hero.style.setProperty('--accent-deep', f.p.profundo);
+  frascos.forEach((g) => g.el.setAttribute('aria-current', g === f ? 'true' : 'false'));
+}
+function ir(delta) { objetivo = Math.round(objetivo) + delta; activar(mod(objetivo, N)); }
+function irA(i) {
+  let d = mod(i - Math.round(objetivo), N); if (d > N / 2) d -= N;
+  objetivo = Math.round(objetivo) + d; activar(mod(objetivo, N));
+}
+function abrir(i) {
+  irA(i); const f = frascos[activo].p;
+  $('fTipo').textContent = f.tipo; $('fNombre').textContent = f.nombre; $('fCient').textContent = f.parte + ' · ' + f.cient;
+  $('fAccion').textContent = f.accion; $('fCant').textContent = f.cant;
+  detObj = 1; hero.classList.add('detalle');
+  try { history.replaceState(null, '', '#' + f.id); } catch (e) {}
+  setTimeout(() => $('volver').focus({ preventScroll: true }), 60);
+}
+function cerrar() {
+  detObj = 0; hero.classList.remove('detalle');
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+}
+$('prev').addEventListener('click', () => ir(-1)); $('next').addEventListener('click', () => ir(1));
+$('volver').addEventListener('click', cerrar);
+addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') ir(-1); else if (e.key === 'ArrowRight') ir(1); else if (e.key === 'Escape') cerrar();
+});
+frascos.forEach((f) => {
+  f.el.addEventListener('click', () => { if (movido > 6) return; if (f.i === activo) { det > .5 ? cerrar() : abrir(f.i); } else if (!detObj) irA(f.i); });
+  f.el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f.i === activo ? abrir(f.i) : irA(f.i); } });
+});
+
+/* arrastre: mueve el carrusel y el frasco que pasa va girando su etiqueta */
+escena.addEventListener('pointerdown', (e) => { if (detObj) return; arrastrando = true; ultX = e.clientX; vel = 0; movido = 0; escena.classList.add('arrastra'); });
+addEventListener('pointermove', (e) => {
+  mira.ox = e.clientX / innerWidth - 0.5; mira.oy = e.clientY / innerHeight - 0.5;
+  if (!arrastrando) return;
+  const dx = e.clientX - ultX; ultX = e.clientX; movido += Math.abs(dx);
+  const paso = Wj * 0.8;
+  cur -= dx / paso; objetivo = cur; vel = lerp(vel, -dx / paso, 0.5);
+  frascos[activo].rotBase += dx / (Wj * 2.2);
+  if (!tocoUna && movido > 8) { tocoUna = true; $('pista').classList.add('oculta'); }
+  const a = mod(Math.round(cur), N); if (a !== activo) activar(a);
+});
+const soltar = () => {
+  if (!arrastrando) return; arrastrando = false; escena.classList.remove('arrastra');
+  objetivo = Math.round(movido < 6 ? objetivo : cur + vel * 5); activar(mod(objetivo, N));
+};
+addEventListener('pointerup', soltar); addEventListener('pointercancel', soltar);
+escena.addEventListener('wheel', (e) => { if (detObj || Math.abs(e.deltaX) < Math.abs(e.deltaY)) return; e.preventDefault(); ir(e.deltaX > 0 ? 1 : -1); }, { passive: false });
+
+/* ====================================================== cuadro */
+let ultT = performance.now(), visible = true;
+new IntersectionObserver((en) => { visible = en[0].isIntersecting; }, { threshold: 0.01 }).observe(hero);
+const sky = { tinte: [0.24, 0.47, 0.38], amt: 0 };
+function cuadro(now) {
+  requestAnimationFrame(cuadro);
+  if (!visible || document.hidden) { ultT = now; return; }
+  const dt = Math.min((now - ultT) / 1000, 0.05); ultT = now; const t = now / 1000;
+
+  // carrusel y detalle
+  cur = arrastrando ? cur : lerp(cur, objetivo, 1 - Math.exp(-dt * (quieto ? 60 : 6.5)));
+  det = lerp(det, detObj, 1 - Math.exp(-dt * (quieto ? 60 : 5)));
+  mira.x = lerp(mira.x, mira.ox, 0.04); mira.y = lerp(mira.y, mira.oy, 0.04);
+
+  // movimiento del frasco que ancla la transición
+  const dx = vertical ? 0 : -W * 0.2, dy = vertical ? -H * 0.2 : 0, escDet = vertical ? 0.78 : 1.08;
+
+  for (const f of frascos) {
+    let d = mod(f.i - cur + N / 2, N) - N / 2;
+    const ad = Math.abs(d);
+    const esActivo = f.i === activo;
+    let x = d * Wj * 0.82, esc = 1 - 0.4 * Math.min(ad, 1.6);
+    let op = ad <= 1 ? 1 - 0.12 * ad : Math.max(0, 0.88 - (ad - 1) * 1.8);
+    let y = (esActivo && !quieto ? Math.sin(t * 1.1 + f.i) * Hj * 0.008 : 0) + (vertical ? -H * 0.05 : 0);
+    let rot = -9 + d * 6;
+    // en el detalle el elegido se corre y el resto se va
+    if (esActivo) { x = lerp(x, dx, ease(det)); y = lerp(y, dy, ease(det)); esc = lerp(esc, escDet, ease(det)); rot = lerp(rot, -7, det); }
+    else op *= 1 - det;
+    f.x = x; f.y = y; f.esc = esc; f.rot = rot; f.op = op;
+    f.el.style.zIndex = Math.round(100 - ad * 10 + (esActivo ? 5 : 0));
+    f.el.style.opacity = op.toFixed(3);
+    f.el.style.visibility = op < 0.01 ? 'hidden' : 'visible';
+    f.el.style.pointerEvents = op < 0.3 ? 'none' : 'auto';
+    f.el.style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg) scale(${esc.toFixed(4)})`;
+
+    // etiqueta: arrastre con inercia, vuelve al frente y gira una vuelta al elegirse
+    if (!(arrastrando && esActivo)) f.rotBase = lerp(f.rotBase, Math.round(f.rotBase), 1 - Math.exp(-dt * 4.5));
+    if (f.spin > 0) { const p = clamp((performance.now() - f.spinT0) / 1300, 0, 1); f.spin = 1 - ease(p); if (p >= 1) f.spin = 0; }
+    const vaiven = quieto ? 0 : Math.sin(t * 0.6 + f.i * 1.7) * (esActivo ? 0.03 : 0.012);
+    const rotEt = f.rotBase + f.spin + vaiven + (esActivo ? mira.x * 0.05 : 0);
+    if (op > 0.01) pintarEtiqueta(f, rotEt);
+  }
+
+  // cielo
+  const tg = PRODUCTOS[activo].cielo;
+  for (let k = 0; k < 3; k++) sky.tinte[k] = lerp(sky.tinte[k], tg[k], 1 - Math.exp(-dt * 3));
+  sky.amt = lerp(sky.amt, detObj ? 1 : 0, 1 - Math.exp(-dt * 3));
+  if (cgl && cieloU) {
+    cgl.uniform1f(cieloU.t, quieto ? 0 : t); cgl.uniform2f(cieloU.res, cieloCv.width, cieloCv.height);
+    cgl.uniform2f(cieloU.mira, mira.x, mira.y); cgl.uniform3f(cieloU.tinte, sky.tinte[0], sky.tinte[1], sky.tinte[2]); cgl.uniform1f(cieloU.amt, sky.amt);
+    cgl.drawArrays(cgl.TRIANGLES, 0, 3);
+  }
+}
+
+/* ====================================================== arranque */
+(async () => {
+  try {
+    const [sombra, ...etqs] = await Promise.all([cargar('img/frasco-sombreado.png'), ...PRODUCTOS.map((p) => cargar('img/etiqueta-' + p.id + '.webp'))]);
+    if (!gl || !lu) throw new Error('WebGL2 no disponible');
+    texSombra = subir(sombra, 1, false);
+    PRODUCTOS.forEach((p, i) => { texEtiq[p.id] = subir(etqs[i], 0, true); });
+    await Promise.all(frascos.map((f) => f.el.querySelector('img').decode().catch(() => {})));
+    $('cargando').classList.add('oculta'); listo = true; t0 = performance.now();
+    // entrada: el primer frasco gira una vuelta
+    activo = -1; activar(0); if (quieto) frascos[0].spin = 0;
+    // entrada directa a un producto: /hero-jars/#turmeric
+    const h = location.hash.slice(1), k = PRODUCTOS.findIndex((p) => p.id === h);
+    if (k >= 0) { cur = objetivo = k; activo = -1; activar(k, false); abrir(k); det = 1; }
+  } catch (e) {
+    console.error(e); $('cargando').textContent = 'No se pudieron cargar los frascos';
+  }
+})();
+requestAnimationFrame(cuadro);
+})();
+</script>
+</body>
+</html>
