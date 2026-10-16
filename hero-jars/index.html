@@ -163,6 +163,17 @@ canvas#cielo { position: absolute; inset: 0; width: 100%; height: 100%; display:
 .mision strong { font-weight: 700; }
 .mision em { color: var(--green-mid); }
 
+/* ---- ajustes */
+.ajustes-btn { position: absolute; z-index: 6; left: var(--pad); top: calc(env(safe-area-inset-top, 0px) + 82px); appearance: none; border: 0; cursor: pointer; background: rgba(255,255,255,.92); color: var(--green-deep); font: 600 12px/1 var(--sans); letter-spacing: .04em; padding: 10px 14px; border-radius: 999px; }
+.ajustes-btn:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.ajustes { position: absolute; z-index: 6; left: var(--pad); right: var(--pad); top: calc(env(safe-area-inset-top, 0px) + 124px); max-width: 360px; background: rgba(255,255,255,.94); color: var(--green-deep); border-radius: 18px; padding: 14px 16px; display: grid; gap: 10px; box-shadow: 0 14px 34px -22px rgba(38,67,56,.7); }
+.ajustes label { display: grid; grid-template-columns: 96px 1fr 52px; align-items: center; gap: 10px; font-size: 12px; }
+.ajustes input[type=range] { width: 100%; accent-color: var(--green); }
+.ajustes output { text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
+.ajustes .fila { display: flex; gap: 8px; justify-content: space-between; align-items: center; font-size: 12px; }
+.ajustes button { appearance: none; border: 1px solid rgba(38,67,56,.25); background: var(--cream-2); color: var(--green-deep); font: 600 12px/1 var(--sans); padding: 9px 12px; border-radius: 999px; cursor: pointer; }
+.hero.detalle .ajustes-btn { opacity: 0; pointer-events: none; }
+
 @media (max-width: 860px) {
   .pill { display: none; }
   .nav { grid-template-columns: 1fr auto; }
@@ -219,6 +230,15 @@ canvas#cielo { position: absolute; inset: 0; width: 100%; height: 100%; display:
     <button type="button" id="prev" aria-label="Producto anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M10 7l-5 5 5 5"/></svg></button>
     <div class="nombre" aria-live="polite"><span id="cNombre">Neem</span><small id="cNum">01 / 04</small></div>
     <button type="button" id="next" aria-label="Producto siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 7l5 5-5 5"/></svg></button>
+  </div>
+  <button class="ajustes-btn" id="ajustesBtn" type="button" aria-expanded="false" aria-controls="ajustes">Ajustes de etiqueta</button>
+  <div class="ajustes" id="ajustes" hidden>
+    <label for="sK">Ancho del arte<input id="sK" type="range" min="400" max="1600" step="5"><output id="oK"></output></label>
+    <label for="sV">Alto del arte<input id="sV" type="range" min="60" max="160" step="1"><output id="oV"></output></label>
+    <label for="sQ">Curvatura<input id="sQ" type="range" min="20" max="100" step="1"><output id="oQ"></output></label>
+    <label for="sOff">Giro fino<input id="sOff" type="range" min="-20" max="20" step="0.5"><output id="oOff"></output></label>
+    <label for="sBr">Brillo<input id="sBr" type="range" min="70" max="150" step="1"><output id="oBr"></output></label>
+    <div class="fila"><button type="button" id="restablecer">Restablecer</button><button type="button" id="copiar">Copiar valores</button></div>
   </div>
   <span class="pista" id="pista">Arrastrá para girar · tocá el frasco</span>
 
@@ -317,20 +337,19 @@ if (gl) {
      en y=5 y borde de abajo en y=1002 que sube 35 px en los costados (perspectiva). El arte da la vuelta
      entera al cilindro: 0.888 vueltas de textura por vuelta de frasco: en el centro el arte queda a su proporción real. */
   const fs = `#version 300 es
-    precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uLab, uSh; uniform float uRot;
+    precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uLab, uSh; uniform float uRot, uK, uQ, uV, uBr;
     const float PI = 3.14159265;
-    const float Q = .85; // 1 = cilindro puro; menos = más plano (el arte se comprime menos en los costados)
     void main(){
       vec4 sh = texture(uSh, vec2(vUv.x, 1.0 - vUv.y));
       if (sh.a < .003) { o = vec4(0.); return; }
       float px = vUv.x * 810.0, py = (1.0 - vUv.y) * 1006.0;
       float s = clamp((px - 402.0) / 403.0, -.999, .999);
       float bot = 1002.0 - 35.0 * pow(abs(s), 4.0);
-      float v = clamp((py - 5.0) / (bot - 5.0), 0.0, 1.0);
-      float u = .5 + uRot + .888 * asin(s * Q) / (Q * 2.0 * PI);
+      float v = clamp(.5 + ((py - 5.0) / (bot - 5.0) - .5) / uV, 0.0, 1.0);
+      float u = .5 + uRot + uK * asin(s * uQ) / (uQ * 2.0 * PI);
       vec3 c = texture(uLab, vec2(u, v)).rgb;
       float curva = mix(.9, 1.0, sqrt(1.0 - s * s));
-      vec3 col = c * pow(sh.r, 1.1) * curva * 1.1;
+      vec3 col = c * pow(sh.r, 1.1) * curva * uBr;
       col += vec3(.06) * smoothstep(.62, .93, sh.r);
       col = clamp(col, 0.0, 1.0);
       o = vec4(col * sh.a, sh.a);
@@ -341,11 +360,15 @@ if (gl) {
     const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    lu = { rot: gl.getUniformLocation(prog, 'uRot') };
+    lu = { rot: gl.getUniformLocation(prog, 'uRot'), k: gl.getUniformLocation(prog, 'uK'), q: gl.getUniformLocation(prog, 'uQ'), v: gl.getUniformLocation(prog, 'uV'), br: gl.getUniformLocation(prog, 'uBr') };
     gl.uniform1i(gl.getUniformLocation(prog, 'uLab'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'uSh'), 1);
     gl.disable(gl.BLEND);
   }
 }
+/* ---- ajustes de la etiqueta (se recuerdan en este navegador) */
+const AJ0 = { k: 888, q: 85, v: 100, br: 110, off: 0 };
+const aj = { ...AJ0 };
+try { Object.assign(aj, JSON.parse(localStorage.getItem('eyd-jars-ajustes-v1') || '{}')); } catch (e) {}
 const aniso = gl && (gl.getExtension('EXT_texture_filter_anisotropic'));
 function subir(img, unit, repetirU) {
   const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
@@ -397,7 +420,7 @@ function pintarEtiqueta(f, rot) {
   f.ultimaRot = rot;
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texEtiq[f.p.id]);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texSombra);
-  gl.uniform1f(lu.rot, rot);
+  gl.uniform1f(lu.rot, rot + aj.off / 100); gl.uniform1f(lu.k, aj.k / 1000); gl.uniform1f(lu.q, aj.q / 100); gl.uniform1f(lu.v, aj.v / 100); gl.uniform1f(lu.br, aj.br / 100);
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   f.ctx.clearRect(0, 0, bufW, bufH); f.ctx.drawImage(glc, 0, 0);
@@ -517,6 +540,24 @@ function cuadro(now) {
     cgl.drawArrays(cgl.TRIANGLES, 0, 3);
   }
 }
+
+/* ====================================================== ajustes */
+const campos = {
+  k: ['sK', 'oK', (v) => (v / 1000).toFixed(3) + ' v'], v: ['sV', 'oV', (v) => v + '%'], q: ['sQ', 'oQ', (v) => (v / 100).toFixed(2)],
+  off: ['sOff', 'oOff', (v) => v + '%'], br: ['sBr', 'oBr', (v) => v + '%']
+};
+function pintarAj() { for (const k in campos) { const [i, o, f] = campos[k]; $(i).value = aj[k]; $(o).textContent = f(aj[k]); } }
+function guardarAj() { frascos.forEach((f) => { f.ultimaRot = NaN; }); try { localStorage.setItem('eyd-jars-ajustes-v1', JSON.stringify(aj)); } catch (e) {} }
+for (const k in campos) $(campos[k][0]).addEventListener('input', (e) => { aj[k] = +e.target.value; $(campos[k][1]).textContent = campos[k][2](aj[k]); guardarAj(); });
+pintarAj();
+const panelAj = $('ajustes'), btnAj = $('ajustesBtn');
+btnAj.addEventListener('click', () => { panelAj.hidden = !panelAj.hidden; btnAj.setAttribute('aria-expanded', String(!panelAj.hidden)); });
+$('restablecer').addEventListener('click', () => { Object.assign(aj, AJ0); pintarAj(); guardarAj(); });
+$('copiar').addEventListener('click', (e) => {
+  const txt = `ancho del arte ${(aj.k / 1000).toFixed(3)} · alto del arte ${aj.v}% · curvatura ${(aj.q / 100).toFixed(2)} · giro fino ${aj.off}% · brillo ${aj.br}%`;
+  navigator.clipboard.writeText(txt).then(() => { e.target.textContent = 'Copiado'; setTimeout(() => { e.target.textContent = 'Copiar valores'; }, 1400); }).catch(() => { e.target.textContent = txt; });
+});
+escena.addEventListener('pointerdown', () => { if (!panelAj.hidden) { panelAj.hidden = true; btnAj.setAttribute('aria-expanded', 'false'); } });
 
 /* ====================================================== arranque */
 (async () => {
