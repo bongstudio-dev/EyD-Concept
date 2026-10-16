@@ -315,11 +315,11 @@ if (gl) {
   const vs = '#version 300 es\nin vec2 p; out vec2 vUv; void main(){ vUv = p * .5 + .5; gl_Position = vec4(p, 0., 1.); }';
   /* Geometría medida sobre la foto (recorte 810 x 1006): eje en x=402, radio 403, borde de arriba plano
      en y=5 y borde de abajo en y=1002 que sube 35 px en los costados (perspectiva). El arte da la vuelta
-     entera al cilindro: 0.888 vueltas de textura por vuelta de frasco para que no se vea estirado. */
+     entera al cilindro: 0.888 vueltas de textura por vuelta de frasco: en el centro el arte queda a su proporción real. */
   const fs = `#version 300 es
     precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uLab, uSh; uniform float uRot;
     const float PI = 3.14159265;
-    const float Q = .68; // 1 = cilindro puro; menos = más plano (el arte se comprime menos en los costados)
+    const float Q = .85; // 1 = cilindro puro; menos = más plano (el arte se comprime menos en los costados)
     void main(){
       vec4 sh = texture(uSh, vec2(vUv.x, 1.0 - vUv.y));
       if (sh.a < .003) { o = vec4(0.); return; }
@@ -327,7 +327,7 @@ if (gl) {
       float s = clamp((px - 402.0) / 403.0, -.999, .999);
       float bot = 1002.0 - 35.0 * pow(abs(s), 4.0);
       float v = clamp((py - 5.0) / (bot - 5.0), 0.0, 1.0);
-      float u = .5 + uRot + asin(s * Q) / (Q * 2.0 * PI * .888);
+      float u = .5 + uRot + .888 * asin(s * Q) / (Q * 2.0 * PI);
       vec3 c = texture(uLab, vec2(u, v)).rgb;
       float curva = mix(.9, 1.0, sqrt(1.0 - s * s));
       vec3 col = c * pow(sh.r, 1.1) * curva * 1.1;
