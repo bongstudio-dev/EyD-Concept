@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<!-- firma:bong
+
+      ##########         #########
+      ###########      #############
+      ############   #################
+      ###########   ###################
+      ##########    ###################
+      ############  ###################
+      #############  #################
+      #############   ###############
+      ############      ###########
+
+                            #####
+      ##     ######     ##########
+      ####   ######   ###########
+      #####  ######  ###########
+      #############  ##########
+      #############  ###################
+      #############  ##################
+      #############   #################
+      #############     #############
+      #############        #######
+
+      E&D HERBS · NOMBRES EN LOOP
+      Herramienta para armar piezas animadas con los emblemas de E&D Herbs.
+
+      Hola. Si estás leyendo esto, te gusta ver cómo están hechas las cosas.
+      A nosotros también.
+
+      Diseño y desarrollo: Bong Studio
+      Estudio de branding. Córdoba, Argentina. Desde 2019.
+      Hicimos el sistema de marca de E&D Herbs. Esta herramienta pone en
+      movimiento sus emblemas, su tipografía y sus tríadas de color.
+
+      CRÉDITOS
+      María Lopez / Brand Designer
+      Marcos Cousseau / Creative Director
+
+      CONTACTO
+      https://bongstudio.ar
+
+      BONG STUDIO · 2026 — Brutally Clear Branding — bongstudio.ar
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E&amp;D Herbs - Nombres en loop</title>
+<style>
+  @font-face { font-family: "Averia"; src: url(fonts/AveriaSerifLibre-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: "Averia"; src: url(fonts/AveriaSerifLibre-Light.ttf); font-weight: 300; }
+  @font-face { font-family: "Averia"; src: url(fonts/AveriaSerifLibre-Italic.ttf); font-style: italic; }
+  @font-face { font-family: "OpenSans"; src: url(fonts/OpenSans-SemiBold.ttf); font-weight: 600; }
+
+  :root {
+    --bg: #6CB89C; --txt: #417B65; --ill: #264338;
+    --dur: 900ms; --ease: cubic-bezier(.7, 0, .2, 1);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #202020; overflow: hidden; }
+  body { display: grid; place-items: center; font-family: "OpenSans", sans-serif; }
+
+  /* Pieza a 1080 x 1350 (post 4:5), escalada a la ventana */
+  #stage {
+    width: 1080px; height: 1350px; position: relative; overflow: hidden;
+    background: var(--bg); transform-origin: center;
+    transition: background-color var(--dur) var(--ease);
+  }
+  #stage[data-ratio="9x16"] { height: 1920px; }
+  #stage[data-ratio="1x1"]  { height: 1080px; }
+
+  #names {
+    position: absolute; left: 0; right: 0; top: 0;
+    will-change: transform;
+  }
+  .name {
+    height: var(--lh, 168px); line-height: var(--lh, 168px);
+    text-align: center; white-space: nowrap;
+    font-family: "Averia"; font-weight: 400;
+    font-size: var(--fs, 150px); letter-spacing: -0.02em;
+    color: var(--txt); opacity: var(--rest, .55);
+    transition: color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+  }
+  .name.on { opacity: 1; }
+  #stage.upper .name { text-transform: uppercase; letter-spacing: 0; }
+  #stage.italic .name { font-style: italic; }
+
+  #emblem {
+    position: absolute; left: 50%; top: 50%;
+    width: var(--ew, 760px); aspect-ratio: 1300 / 1080;
+    transform: translate(-50%, -50%);
+  }
+  #emblem .e {
+    position: absolute; inset: 0; background: var(--ill);
+    -webkit-mask: var(--src) center / contain no-repeat;
+            mask: var(--src) center / contain no-repeat;
+    transition: background-color var(--dur) var(--ease),
+                opacity calc(var(--dur) * .7) var(--ease),
+                transform var(--dur) var(--ease), filter var(--dur) var(--ease);
+  }
+  #emblem .e.out { opacity: 0; transform: translateY(-6%) scale(.96); filter: blur(6px); }
+  #emblem .e.pre { opacity: 0; transform: translateY(6%) scale(.96); filter: blur(6px); transition: none; }
+
+  /* Controles */
+  #ui {
+    position: fixed; right: 16px; bottom: 16px; z-index: 9;
+    background: rgba(32,32,32,.88); color: #F7EDEE; border-radius: 12px;
+    padding: 14px 16px; font-size: 12px; display: grid; gap: 8px; width: 250px;
+    backdrop-filter: blur(8px);
+  }
+  #ui.hide { display: none; }
+  #ui label { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 8px; }
+  #ui .row { display: flex; gap: 6px; flex-wrap: wrap; }
+  #ui button {
+    font: inherit; background: #F7EDEE22; color: inherit; border: 0;
+    border-radius: 6px; padding: 5px 8px; cursor: pointer;
+  }
+  #ui button.on { background: #F7EDEE; color: #202020; }
+  #ui select, #ui input { width: 100%; }
+  #ui small { opacity: .6; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="names"></div>
+  <div id="emblem"></div>
+</div>
+
+<div id="ui">
+  <div class="row" id="combos"></div>
+  <label>Ritmo <input id="speed" type="range" min="0.5" max="2.5" step="0.1" value="1"></label>
+  <label>Cuerpo <input id="size" type="range" min="90" max="220" step="2" value="150"></label>
+  <label>Emblema <input id="esize" type="range" min="400" max="1000" step="10" value="760"></label>
+  <label>Resto <input id="rest" type="range" min="0.15" max="1" step="0.05" value="0.55"></label>
+  <label>Formato
+    <select id="ratio"><option value="4x5">4:5 post</option><option value="9x16">9:16 story</option><option value="1x1">1:1</option></select>
+  </label>
+  <div class="row">
+    <button id="bUpper">MAYÚS</button>
+    <button id="bItalic">Itálica</button>
+    <button id="bPlay" class="on">Play</button>
+  </div>
+  <small>Espacio: pausa · H: ocultar panel · ← →: paso</small>
+</div>
+
+<script>
+/* ---------- Datos ---------- */
+const SLUGS = ["chamomile","lavender","rosemary","calendula","eucalyptus","ginger","turmeric","hibiscus","valerian","peppermint","sage","echinacea","lemon-balm","ashwagandha","thyme","passionflower","nettle","olive","reishi","moringa","st-johns-wort","dandelion","lions-mane","tulsi","garlic","arnica","oregano","milk-thistle","basil","cinnamon","aloe","rhodiola","comfrey","frankincense","kava-kava","myrrh","maca","neem","hyssop","feverfew","chanca-piedra","gotu-kola","graviola","eleuthero","lemongrass","artemisa","senna","tea-tree","plantain","poleo","kalanchoe","gymnema","curia","anamu","bee-pollen","chaga","cordyceps","maitake","shiitake","turkey-tail"];
+const SPECIAL = { "st-johns-wort": "St. John's Wort", "lions-mane": "Lion's Mane", "tea-tree": "Tea Tree", "bee-pollen": "Bee Pollen" };
+const nameOf = s => SPECIAL[s] || s.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+
+const TRIADAS = {
+  verde:     ["#417B65", "#6CB89C", "#264338"],
+  lavanda:   ["#DE9CE3", "#F7CFFA", "#936E96"],
+  terracota: ["#DF5425", "#FBB49C", "#8B361B"],
+  ocre:      ["#B58735", "#FEDCA2", "#7E612E"],
+  azul:      ["#6E96DE", "#BAD3FF", "#46659D"],
+  violeta:   ["#9D7FE0", "#CDB9F8", "#604796"],
+};
+const ORDER = ["verde","lavanda","terracota","ocre","azul","violeta"];
+
+/* Combinaciones de color: qué rol va a fondo / texto / emblema */
+const COMBOS = {
+  "Luminoso":  t => ({ bg: t[1], txt: t[0], ill: t[2] }),
+  "Principal": t => ({ bg: t[0], txt: t[1], ill: t[2] }),
+  "Crema":     t => ({ bg: "#F7EDEE", txt: t[1], ill: t[2] }),
+  "Profundo":  t => ({ bg: t[2], txt: t[0], ill: t[1] }),
+};
+let combo = "Luminoso";
+
+const items = SLUGS.map((s, i) => ({ slug: s, name: nameOf(s), triada: TRIADAS[ORDER[i % ORDER.length]] }));
+const N = items.length;
+
+/* ---------- DOM ---------- */
+const stage = document.getElementById("stage");
+const list = document.getElementById("names");
+const emblem = document.getElementById("emblem");
+const REPS = 3;                       // lista repetida para el loop sin corte
+const rows = [];
+for (let r = 0; r < REPS; r++) items.forEach((it, i) => {
+  const d = document.createElement("div");
+  d.className = "name"; d.textContent = it.name; d.dataset.i = i;
+  list.appendChild(d); rows.push(d);
+});
+
+let idx = 0, pos = N, playing = true, timer = null, speed = 1;
+const lh = () => parseFloat(getComputedStyle(stage).getPropertyValue("--lh"));
+
+function fitRows() {
+  // achica sólo las líneas que no entran en el ancho
+  const max = 1080 - 80;
+  rows.forEach(d => { d.style.fontSize = ""; const w = d.scrollWidth;
+    if (w > max) d.style.fontSize = (parseFloat(getComputedStyle(d).fontSize) * max / w) + "px"; });
+}
+
+function place(animate) {
+  list.style.transition = animate ? `transform var(--dur) var(--ease)` : "none";
+  const y = stage.clientHeight / 2 - lh() * (pos + 0.5);
+  list.style.transform = `translateY(${y}px)`;
+  rows.forEach((d, k) => d.classList.toggle("on", k === pos));
+}
+
+function paint() {
+  const c = COMBOS[combo](items[idx].triada);
+  stage.style.setProperty("--bg", c.bg);
+  stage.style.setProperty("--txt", c.txt);
+  stage.style.setProperty("--ill", c.ill);
+}
+
+function swapEmblem() {
+  const old = emblem.querySelector(".e:not(.out)");
+  if (old) { old.classList.add("out"); setTimeout(() => old.remove(), 1200); }
+  const e = document.createElement("div");
+  e.className = "e pre";
+  e.style.setProperty("--src", `url("emblemas/EYD_EMB_${items[idx].slug}_verde_rgb.svg")`);
+  emblem.appendChild(e);
+  e.getBoundingClientRect();
+  e.classList.remove("pre");
+}
+
+function step(dir = 1) {
+  idx = (idx + dir + N) % N;
+  pos += dir;
+  place(true); paint(); swapEmblem();
+  // al terminar, si salimos de la copia del medio, saltamos sin animación
+  const dur = 900 / speed;
+  setTimeout(() => {
+    if (pos >= 2 * N || pos < N) { pos = N + idx; place(false); }
+  }, dur + 20);
+}
+
+function loop() {
+  clearTimeout(timer);
+  if (!playing) return;
+  timer = setTimeout(() => { step(1); loop(); }, 1800 / speed);
+}
+
+/* precarga de emblemas */
+items.forEach(it => { const im = new Image(); im.src = `emblemas/EYD_EMB_${it.slug}_verde_rgb.svg`; });
+
+/* ---------- Escala a la ventana ---------- */
+function scale() {
+  const s = Math.min(innerWidth / 1080, innerHeight / stage.offsetHeight) * .96;
+  stage.style.transform = `scale(${s})`;
+  stage.style.margin = `${(stage.offsetHeight * (s - 1)) / 2}px ${(1080 * (s - 1)) / 2}px`;
+}
+addEventListener("resize", scale);
+
+/* ---------- Controles ---------- */
+const $ = id => document.getElementById(id);
+const combosEl = $("combos");
+Object.keys(COMBOS).forEach(k => {
+  const b = document.createElement("button"); b.textContent = k; b.classList.toggle("on", k === combo);
+  b.onclick = () => { combo = k; [...combosEl.children].forEach(x => x.classList.toggle("on", x === b)); paint(); };
+  combosEl.appendChild(b);
+});
+$("speed").oninput = e => { speed = +e.target.value; stage.style.setProperty("--dur", (900 / speed) + "ms"); loop(); };
+$("size").oninput = e => { const v = +e.target.value; stage.style.setProperty("--fs", v + "px"); stage.style.setProperty("--lh", Math.round(v * 1.12) + "px"); fitRows(); place(false); };
+$("esize").oninput = e => stage.style.setProperty("--ew", e.target.value + "px");
+$("rest").oninput = e => stage.style.setProperty("--rest", e.target.value);
+$("ratio").onchange = e => { stage.dataset.ratio = e.target.value; scale(); place(false); };
+$("bUpper").onclick = e => { stage.classList.toggle("upper"); e.target.classList.toggle("on"); fitRows(); };
+$("bItalic").onclick = e => { stage.classList.toggle("italic"); e.target.classList.toggle("on"); fitRows(); };
+const togglePlay = () => { playing = !playing; $("bPlay").classList.toggle("on", playing); $("bPlay").textContent = playing ? "Play" : "Pausa"; loop(); };
+$("bPlay").onclick = togglePlay;
+addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+  if (e.key === "h" || e.key === "H") $("ui").classList.toggle("hide");
+  if (e.key === "ArrowRight") step(1);
+  if (e.key === "ArrowLeft") step(-1);
+});
+
+/* ---------- Arranque ---------- */
+stage.style.setProperty("--lh", "168px");
+const Q = new URLSearchParams(location.search);
+if (Q.has("render")) setupRender();
+else document.fonts.ready.then(() => { fitRows(); scale(); place(false); paint(); swapEmblem(); loop(); });
+
+/* ---------- Modo render: cuadro por cuadro, sin transiciones ----------
+   ?render&ratio=4x5&combo=Crema&set=chamomile,lavender,...&upper
+   window.seek(ms) dibuja el estado exacto en ese instante.
+   La duración del loop es set.length * PERIOD. */
+function setupRender() {
+  const PERIOD = +(Q.get("period") || 1800), MOVE = +(Q.get("move") || 900);
+  $("ui").classList.add("hide");
+  document.body.style.display = "block";
+  stage.dataset.ratio = Q.get("ratio") || "4x5";
+  if (Q.has("upper")) stage.classList.add("upper");
+  if (Q.get("combo")) combo = Q.get("combo");
+  const css = document.createElement("style");
+  css.textContent = "*{transition:none!important}";
+  document.head.appendChild(css);
+
+  const set = (Q.get("set") || SLUGS.slice(0, 8).join(",")).split(",");
+  const its = set.map(s => ({ slug: s, name: nameOf(s),
+    triada: TRIADAS[ORDER[SLUGS.indexOf(s) % ORDER.length]] }));
+  const M = its.length;
+  list.innerHTML = ""; rows.length = 0;
+  for (let r = 0; r < 3; r++) its.forEach(it => {
+    const d = document.createElement("div"); d.className = "name"; d.textContent = it.name;
+    list.appendChild(d); rows.push(d);
+  });
+  emblem.innerHTML = "";
+  const layer = () => { const e = document.createElement("div"); e.className = "e"; emblem.appendChild(e); return e; };
+  const A = layer(), B = layer();
+  const src = i => `url("emblemas/EYD_EMB_${its[i].slug}_verde_rgb.svg")`;
+
+  // cubic-bezier(.7,0,.2,1)
+  const bez = (x1, y1, x2, y2) => t => {
+    const cx = 3*x1, bx = 3*(x2-x1)-cx, ax = 1-cx-bx, cy = 3*y1, by = 3*(y2-y1)-cy, ay = 1-cy-by;
+    let u = t; for (let k = 0; k < 8; k++) { const x = ((ax*u+bx)*u+cx)*u - t, dx = (3*ax*u+2*bx)*u+cx; if (Math.abs(x) < 1e-6) break; u -= x/dx; }
+    return ((ay*u+by)*u+cy)*u;
+  };
+  const ease = bez(.7, 0, .2, 1);
+  const hex = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+  const mix = (a, b, p) => { const x = hex(a), y = hex(b); return `rgb(${x.map((v, i) => Math.round(v + (y[i]-v)*p)).join(",")})`; };
+  const rest = parseFloat(getComputedStyle(stage).getPropertyValue("--rest")) || .55;
+
+  window.loopMs = M * PERIOD;
+  window.seek = ms => {
+    ms = ((ms % loopMs) + loopMs) % loopMs;
+    const k = Math.floor(ms / PERIOD), local = ms - k * PERIOD;
+    const p = ease(Math.min(local / MOVE, 1));
+    const q = ease(Math.min(local / (MOVE * .7), 1));
+    const from = k % M, to = (k + 1) % M;
+    // lista
+    const base = M + from;
+    const y = stage.clientHeight / 2 - lh() * (base + p + 0.5);
+    list.style.transform = `translateY(${y}px)`;
+    rows.forEach((d, i) => d.style.opacity = i === base ? 1 - (1 - rest) * p : i === base + 1 ? rest + (1 - rest) * p : rest);
+    // color
+    const c0 = COMBOS[combo](its[from].triada), c1 = COMBOS[combo](its[to].triada);
+    stage.style.background = mix(c0.bg, c1.bg, p);
+    rows.forEach(d => d.style.color = mix(c0.txt, c1.txt, p));
+    const ill0 = mix(c0.ill, c1.ill, p);
+    // emblemas: A sale, B entra
+    A.style.setProperty("--src", src(from)); B.style.setProperty("--src", src(to));
+    A.style.background = B.style.background = ill0;
+    A.style.opacity = 1 - q; A.style.transform = `translateY(${-6*p}%) scale(${1 - .04*p})`; A.style.filter = `blur(${6*p}px)`;
+    B.style.opacity = q;     B.style.transform = `translateY(${6*(1-p)}%) scale(${.96 + .04*p})`; B.style.filter = `blur(${6*(1-p)}px)`;
+  };
+  window.renderReady = Promise.all([document.fonts.ready,
+    ...its.map(it => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = `emblemas/EYD_EMB_${it.slug}_verde_rgb.svg`; }))])
+    .then(() => { fitRows(); seek(0); return true; });
+}
+</script>
+</body>
+</html>
